@@ -1,4 +1,4 @@
-import StudentForm from '../../../components/student-form';
+import StudentForm from '../../components/student-form';
 import { getStudentById } from '@/lib/api';
 import { notFound } from 'next/navigation';
 
