@@ -20,7 +20,9 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import ReportGenerator from './components/report-generator';
-import { Mail, Phone, MapPin } from 'lucide-react';
+import { Mail, Phone, MapPin, Pencil } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 export default async function StudentProfilePage({
   params,
@@ -41,21 +43,29 @@ export default async function StudentProfilePage({
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col items-start gap-4 md:flex-row">
-        <Avatar className="h-24 w-24 border">
-          <AvatarImage src={avatarData?.imageUrl} alt={student.name} data-ai-hint={avatarData?.imageHint} />
-          <AvatarFallback className="text-3xl">{initials}</AvatarFallback>
-        </Avatar>
-        <div className="grid gap-1">
-          <h1 className="font-headline text-3xl font-bold">{student.name}</h1>
-          <p className="text-muted-foreground">{student.class}</p>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <Mail className="h-3 w-3" />
-              <span>{student.email}</span>
+      <div className="flex flex-col items-start gap-4 md:flex-row md:justify-between">
+        <div className='flex gap-4 items-start'>
+          <Avatar className="h-24 w-24 border">
+            <AvatarImage src={avatarData?.imageUrl} alt={student.name} data-ai-hint={avatarData?.imageHint} />
+            <AvatarFallback className="text-3xl">{initials}</AvatarFallback>
+          </Avatar>
+          <div className="grid gap-1">
+            <h1 className="font-headline text-3xl font-bold">{student.name}</h1>
+            <p className="text-muted-foreground">{student.class}</p>
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <Mail className="h-3 w-3" />
+                <span>{student.email}</span>
+              </div>
             </div>
           </div>
         </div>
+        <Button asChild variant="outline">
+          <Link href={`/students/${student.id}/edit`}>
+            <Pencil className="mr-2 h-4 w-4" />
+            Edit Siswa
+          </Link>
+        </Button>
       </div>
 
       <Tabs defaultValue="report">

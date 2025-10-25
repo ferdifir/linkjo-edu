@@ -6,8 +6,25 @@ import { Student } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Button } from '@/components/ui/button';
-import { ArrowUpDown } from 'lucide-react';
+import { ArrowUpDown, MoreHorizontal } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { deleteStudentAction } from '../[id]/actions';
+import { useToast } from '@/hooks/use-toast';
+
+async function onDelete(id: string) {
+    if (confirm('Apakah Anda yakin ingin menghapus siswa ini?')) {
+        await deleteStudentAction(id);
+    }
+}
+
 
 export const columns: ColumnDef<Student>[] = [
   {
@@ -81,6 +98,58 @@ export const columns: ColumnDef<Student>[] = [
         <div className="text-right font-medium">
           <Badge variant="outline" className={`border-none ${color}`}>{amount}%</Badge>
         </div>
+      );
+    },
+  },
+    {
+    id: 'actions',
+    cell: ({ row }) => {
+      const student = row.original;
+      const { toast } = useToast();
+
+      const handleDelete = async () => {
+        if (confirm('Apakah Anda yakin ingin menghapus siswa ini?')) {
+          try {
+            await deleteStudentAction(student.id);
+            toast({
+              title: 'Siswa Dihapus',
+              description: `${student.name} telah dihapus.`,
+            });
+          } catch (error) {
+             toast({
+              variant: 'destructive',
+              title: 'Gagal menghapus siswa',
+              description: 'Terjadi kesalahan saat menghapus siswa.',
+            });
+          }
+        }
+      };
+
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Buka menu</span>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Aksi</DropdownMenuLabel>
+            <DropdownMenuItem asChild>
+              <Link href={`/students/${student.id}`}>Lihat Profil</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href={`/students/${student.id}/edit`}>Edit</Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={handleDelete}
+              className="text-red-600"
+            >
+              Hapus
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       );
     },
   },

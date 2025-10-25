@@ -8,7 +8,7 @@ export const courses: Course[] = [
   { id: 'C105', name: 'Kimia', teacher: 'Ibu White', schedule: 'Sen-Rab-Jum 14-15' },
 ];
 
-export const students: Student[] = [
+export let students: Student[] = [
   {
     id: 'S001',
     name: 'Liam Johnson',
