@@ -12,20 +12,20 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const GenerateStudentReportInputSchema = z.object({
-  studentName: z.string().describe('The name of the student.'),
+  studentName: z.string().describe('Nama siswa.'),
   grades: z
     .array(z.object({
       assignment: z.string(),
       grade: z.number(),
     }))
-    .describe('The grades of the student.'),
-  attendancePercentage: z.number().describe('The attendance percentage of the student.'),
-  teacherNotes: z.string().optional().describe('Optional notes from the teacher about the student.'),
+    .describe('Nilai siswa.'),
+  attendancePercentage: z.number().describe('Persentase kehadiran siswa.'),
+  teacherNotes: z.string().optional().describe('Catatan opsional dari guru tentang siswa.'),
 });
 export type GenerateStudentReportInput = z.infer<typeof GenerateStudentReportInputSchema>;
 
 const GenerateStudentReportOutputSchema = z.object({
-  report: z.string().describe('The generated student performance report.'),
+  report: z.string().describe('Laporan kinerja siswa yang dihasilkan.'),
 });
 export type GenerateStudentReportOutput = z.infer<typeof GenerateStudentReportOutputSchema>;
 
@@ -37,19 +37,19 @@ const prompt = ai.definePrompt({
   name: 'generateStudentReportPrompt',
   input: {schema: GenerateStudentReportInputSchema},
   output: {schema: GenerateStudentReportOutputSchema},
-  prompt: `You are an AI assistant designed to generate student performance reports for teachers.
+  prompt: `Anda adalah asisten AI yang dirancang untuk membuat laporan kinerja siswa untuk para guru.
 
-  Based on the student's grades, attendance, and teacher's notes, create a comprehensive report.
+  Berdasarkan nilai, kehadiran, dan catatan guru, buatlah laporan yang komprehensif.
 
-  Student Name: {{{studentName}}}
-  Grades:
+  Nama Siswa: {{{studentName}}}
+  Nilai:
   {{#each grades}}
   - {{assignment}}: {{grade}}
   {{/each}}
-  Attendance Percentage: {{{attendancePercentage}}}%
-  Teacher's Notes: {{#if teacherNotes}}{{{teacherNotes}}}{{else}}No notes provided.{{/if}}
+  Persentase Kehadiran: {{{attendancePercentage}}}%
+  Catatan Guru: {{#if teacherNotes}}{{{teacherNotes}}}{{else}}Tidak ada catatan yang diberikan.{{/if}}
 
-  Generate a report summarizing the student's performance, highlighting strengths and areas for improvement.`,
+  Buat laporan yang merangkum kinerja siswa, menyoroti kekuatan dan area yang perlu ditingkatkan.`,
 });
 
 const generateStudentReportFlow = ai.defineFlow(

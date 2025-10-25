@@ -9,11 +9,11 @@ export default async function StudentsPage() {
   return (
     <div className="space-y-8">
       <h1 className="font-headline text-3xl font-bold tracking-tight">
-        Student Directory
+        Direktori Siswa
       </h1>
       <Card>
         <CardHeader>
-          <CardTitle>All Students</CardTitle>
+          <CardTitle>Semua Siswa</CardTitle>
         </CardHeader>
         <CardContent>
           <DataTable columns={columns} data={data} />

@@ -60,24 +60,24 @@ export default async function StudentProfilePage({
 
       <Tabs defaultValue="report">
         <TabsList>
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="grades">Grades</TabsTrigger>
-          <TabsTrigger value="attendance">Attendance</TabsTrigger>
-          <TabsTrigger value="report">AI Performance Report</TabsTrigger>
+          <TabsTrigger value="profile">Profil</TabsTrigger>
+          <TabsTrigger value="grades">Nilai</TabsTrigger>
+          <TabsTrigger value="attendance">Kehadiran</TabsTrigger>
+          <TabsTrigger value="report">Laporan Kinerja AI</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile" className="mt-4">
           <Card>
             <CardHeader>
-              <CardTitle>Enrolled Courses</CardTitle>
+              <CardTitle>Mata Pelajaran yang Diikuti</CardTitle>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Course</TableHead>
-                    <TableHead>Teacher</TableHead>
-                    <TableHead>Schedule</TableHead>
+                    <TableHead>Mata Pelajaran</TableHead>
+                    <TableHead>Guru</TableHead>
+                    <TableHead>Jadwal</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -97,18 +97,18 @@ export default async function StudentProfilePage({
         <TabsContent value="grades" className="mt-4">
           <Card>
             <CardHeader>
-              <CardTitle>Grades</CardTitle>
+              <CardTitle>Nilai</CardTitle>
               <CardDescription>
-                Recent grades for assignments and exams.
+                Nilai terbaru untuk tugas dan ujian.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Subject</TableHead>
-                    <TableHead>Assignment</TableHead>
-                    <TableHead className="text-right">Grade</TableHead>
+                    <TableHead>Mata Pelajaran</TableHead>
+                    <TableHead>Tugas</TableHead>
+                    <TableHead className="text-right">Nilai</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -130,12 +130,12 @@ export default async function StudentProfilePage({
         <TabsContent value="attendance" className="mt-4">
           <Card>
             <CardHeader>
-              <CardTitle>Attendance</CardTitle>
+              <CardTitle>Kehadiran</CardTitle>
             </CardHeader>
             <CardContent className="flex items-center gap-4">
               <h2 className="text-4xl font-bold">{student.attendance}%</h2>
               <p className="text-muted-foreground">
-                Overall attendance rate for the current semester.
+                Tingkat kehadiran keseluruhan untuk semester ini.
               </p>
             </CardContent>
           </Card>

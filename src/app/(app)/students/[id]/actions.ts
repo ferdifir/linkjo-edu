@@ -12,8 +12,8 @@ export async function generateReport(
     const { report } = await generateStudentReport(input);
     return { report };
   } catch (e) {
-    console.error('Report generation failed:', e);
-    const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
-    return { error: `Failed to generate report. ${errorMessage}` };
+    console.error('Pembuatan laporan gagal:', e);
+    const errorMessage = e instanceof Error ? e.message : 'Terjadi kesalahan yang tidak diketahui.';
+    return { error: `Gagal membuat laporan. ${errorMessage}` };
   }
 }

@@ -15,29 +15,29 @@ export default async function DashboardPage() {
 
   const statItems = [
     {
-      title: 'Total Students',
+      title: 'Total Siswa',
       value: stats.totalStudents,
       icon: Users,
-      description: 'The total number of enrolled students.',
+      description: 'Jumlah total siswa yang terdaftar.',
     },
     {
-      title: 'Average Attendance',
+      title: 'Rata-rata Kehadiran',
       value: `${stats.averageAttendance}%`,
       icon: Percent,
-      description: 'The school-wide attendance rate.',
+      description: 'Tingkat kehadiran seluruh sekolah.',
     },
     {
-      title: 'Average Grade',
+      title: 'Rata-rata Nilai',
       value: `${stats.averageGrade}%`,
       icon: FileText,
-      description: 'The school-wide average grade.',
+      description: 'Nilai rata-rata seluruh sekolah.',
     },
   ];
 
   return (
     <div className="space-y-8">
       <h1 className="font-headline text-3xl font-bold tracking-tight">
-        School Dashboard
+        Dasbor Sekolah
       </h1>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -61,9 +61,9 @@ export default async function DashboardPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>School-Wide Announcements</CardTitle>
+          <CardTitle>Pengumuman Sekolah</CardTitle>
           <CardDescription>
-            Recent updates and news from the school administration.
+            Pembaruan dan berita terkini dari administrasi sekolah.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -73,8 +73,8 @@ export default async function DashboardPage() {
                 <div className="space-y-1">
                   <h3 className="font-semibold">{announcement.title}</h3>
                   <p className="text-sm text-muted-foreground">
-                    Posted by {announcement.author} on{' '}
-                    {new Date(announcement.date).toLocaleDateString('en-US', {
+                    Diterbitkan oleh {announcement.author} pada{' '}
+                    {new Date(announcement.date).toLocaleDateString('id-ID', {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric',

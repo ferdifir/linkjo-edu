@@ -20,12 +20,12 @@ import {
 } from '@/components/ui/sidebar';
 
 const menuItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/students', label: 'Students', icon: Users },
-  { href: '/schedule', label: 'Schedule', icon: CalendarDays },
-  { href: '/announcements', label: 'Announcements', icon: Megaphone },
-  { href: '/grades', label: 'Grades', icon: FileText, disabled: true },
-  { href: '/attendance', label: 'Attendance', icon: CheckSquare, disabled: true },
+  { href: '/dashboard', label: 'Dasbor', icon: LayoutDashboard },
+  { href: '/students', label: 'Siswa', icon: Users },
+  { href: '/schedule', label: 'Jadwal', icon: CalendarDays },
+  { href: '/announcements', label: 'Pengumuman', icon: Megaphone },
+  { href: '/grades', label: 'Nilai', icon: FileText, disabled: true },
+  { href: '/attendance', label: 'Kehadiran', icon: CheckSquare, disabled: true },
 ];
 
 export function AppSidebar() {

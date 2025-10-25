@@ -14,13 +14,13 @@ export default async function AnnouncementsPage() {
   return (
     <div className="space-y-8">
       <h1 className="font-headline text-3xl font-bold tracking-tight">
-        Announcements
+        Pengumuman
       </h1>
       <Card>
         <CardHeader>
-          <CardTitle>All School Announcements</CardTitle>
+          <CardTitle>Semua Pengumuman Sekolah</CardTitle>
           <CardDescription>
-            A complete list of all updates and news from the school.
+            Daftar lengkap semua pembaruan dan berita dari sekolah.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -30,8 +30,8 @@ export default async function AnnouncementsPage() {
                 <div className="space-y-1">
                   <h3 className="font-semibold">{announcement.title}</h3>
                   <p className="text-sm text-muted-foreground">
-                    Posted by {announcement.author} on{' '}
-                    {new Date(announcement.date).toLocaleDateString('en-US', {
+                    Diterbitkan oleh {announcement.author} pada{' '}
+                    {new Date(announcement.date).toLocaleDateString('id-ID', {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric',

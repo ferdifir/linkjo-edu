@@ -18,18 +18,25 @@ import {
 export default async function SchedulePage() {
   const scheduleData = await getSchedule();
   const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+  const dayNames: { [key: string]: string } = {
+    monday: 'Senin',
+    tuesday: 'Selasa',
+    wednesday: 'Rabu',
+    thursday: 'Kamis',
+    friday: 'Jumat',
+  };
 
   return (
     <div className="space-y-8">
       <h1 className="font-headline text-3xl font-bold tracking-tight">
-        Class Schedule
+        Jadwal Kelas
       </h1>
 
       <Card>
         <CardHeader>
-          <CardTitle>Weekly Timetable</CardTitle>
+          <CardTitle>Jadwal Mingguan</CardTitle>
           <CardDescription>
-            Overview of classes for the current week.
+            Gambaran umum kelas untuk minggu ini.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -37,12 +44,10 @@ export default async function SchedulePage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[120px]">Time</TableHead>
-                  <TableHead>Monday</TableHead>
-                  <TableHead>Tuesday</TableHead>
-                  <TableHead>Wednesday</TableHead>
-                  <TableHead>Thursday</TableHead>
-                  <TableHead>Friday</TableHead>
+                  <TableHead className="w-[120px]">Waktu</TableHead>
+                  {days.map((day) => (
+                    <TableHead key={day}>{dayNames[day]}</TableHead>
+                  ))}
                 </TableRow>
               </TableHeader>
               <TableBody>

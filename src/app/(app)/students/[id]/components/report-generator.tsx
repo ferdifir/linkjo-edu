@@ -68,14 +68,14 @@ export default function ReportGenerator({ student }: { student: Student }) {
     if (result.error) {
       toast({
         variant: 'destructive',
-        title: 'Error generating report',
+        title: 'Gagal membuat laporan',
         description: result.error,
       });
     } else {
-      setReport(result.report || 'No report was generated.');
+      setReport(result.report || 'Tidak ada laporan yang dibuat.');
       toast({
-        title: 'Report Generated Successfully',
-        description: 'The AI performance summary is ready for review.',
+        title: 'Laporan Berhasil Dibuat',
+        description: 'Ringkasan kinerja AI siap untuk ditinjau.',
       });
     }
   }
@@ -83,10 +83,10 @@ export default function ReportGenerator({ student }: { student: Student }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>AI-Powered Performance Report</CardTitle>
+        <CardTitle>Laporan Kinerja Berbasis AI</CardTitle>
         <CardDescription>
-          Generate an automated performance summary for this student based on
-          their grades, attendance, and any additional notes.
+          Buat ringkasan kinerja otomatis untuk siswa ini berdasarkan
+          nilai, kehadiran, dan catatan tambahan apa pun.
         </CardDescription>
       </CardHeader>
       <Form {...form}>
@@ -97,10 +97,10 @@ export default function ReportGenerator({ student }: { student: Student }) {
               name="teacherNotes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Additional Teacher Notes (Optional)</FormLabel>
+                  <FormLabel>Catatan Tambahan Guru (Opsional)</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="e.g., 'Shows great potential in class discussions but needs to focus on submitting homework on time.'"
+                      placeholder="misalnya, 'Menunjukkan potensi besar dalam diskusi kelas tetapi perlu fokus untuk menyerahkan pekerjaan rumah tepat waktu.'"
                       className="resize-none"
                       {...field}
                     />
@@ -113,7 +113,7 @@ export default function ReportGenerator({ student }: { student: Student }) {
           <CardFooter>
             <Button type="submit" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Generate Report
+              Buat Laporan
             </Button>
           </CardFooter>
         </form>
@@ -122,12 +122,12 @@ export default function ReportGenerator({ student }: { student: Student }) {
         <CardContent>
           <Alert>
              <Sparkles className="h-4 w-4" />
-            <AlertTitle>Generated Report</AlertTitle>
+            <AlertTitle>Laporan yang Dihasilkan</AlertTitle>
             <AlertDescription>
               {isLoading ? (
                 <div className="flex items-center">
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating...
+                  Membuat...
                 </div>
               ) : (
                 <pre className="whitespace-pre-wrap font-sans text-sm">
