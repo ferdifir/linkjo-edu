@@ -25,7 +25,7 @@ const menuItems = [
   { href: '/schedule', label: 'Jadwal', icon: CalendarDays },
   { href: '/announcements', label: 'Pengumuman', icon: Megaphone },
   { href: '/grades', label: 'Nilai', icon: FileText, disabled: true },
-  { href: '/attendance', label: 'Kehadiran', icon: CheckSquare, disabled: true },
+  { href: '/attendance', label: 'Kehadiran', icon: CheckSquare, disabled: false },
 ];
 
 export function AppSidebar() {
