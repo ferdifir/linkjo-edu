@@ -110,7 +110,7 @@ export const announcements: Announcement[] = [
   },
 ];
 
-export const schedule: ScheduleEvent[] = [
+export let schedule: ScheduleEvent[] = [
   { time: '9:00 - 10:00', monday: { course: 'Aljabar II', teacher: 'Bpk. Davis' }, wednesday: { course: 'Aljabar II', teacher: 'Bpk. Davis' }, friday: { course: 'Aljabar II', teacher: 'Bpk. Davis' } },
   { time: '10:00 - 11:30', tuesday: { course: 'Sejarah Dunia', teacher: 'Ibu Smith' }, thursday: { course: 'Sejarah Dunia', teacher: 'Ibu Smith' } },
   { time: '11:00 - 12:00', monday: { course: 'Sastra Inggris', teacher: 'Bpk. Allen' }, wednesday: { course: 'Sastra Inggris', teacher: 'Bpk. Allen' }, friday: { course: 'Sastra Inggris', teacher: 'Bpk. Allen' } },

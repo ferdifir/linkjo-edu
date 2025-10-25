@@ -54,7 +54,41 @@ export async function getAnnouncements(): Promise<Announcement[]> {
 }
 
 export async function getSchedule(): Promise<ScheduleEvent[]> {
-  return Promise.resolve(schedule);
+  return Promise.resolve(schedule.sort((a, b) => a.time.localeCompare(b.time)));
+}
+
+export async function getScheduleByTime(time: string): Promise<ScheduleEvent | undefined> {
+  return Promise.resolve(schedule.find((s) => s.time === time));
+}
+
+export async function addSchedule(event: ScheduleEvent): Promise<ScheduleEvent> {
+  // check if time already exists
+  const existingEvent = schedule.find(e => e.time === event.time);
+  if (existingEvent) {
+    throw new Error("Waktu yang sama sudah ada di jadwal.");
+  }
+  schedule.push(event);
+  revalidatePath('/schedule');
+  return Promise.resolve(event);
+}
+
+export async function updateSchedule(time: string, event: ScheduleEvent): Promise<ScheduleEvent> {
+  const eventIndex = schedule.findIndex((e) => e.time === time);
+  if (eventIndex === -1) {
+    throw new Error("Jadwal tidak ditemukan.");
+  }
+  schedule[eventIndex] = event;
+  revalidatePath('/schedule');
+  return Promise.resolve(event);
+}
+
+export async function deleteSchedule(time: string): Promise<void> {
+    const eventIndex = schedule.findIndex((e) => e.time === time);
+    if (eventIndex > -1) {
+        schedule.splice(eventIndex, 1);
+    }
+    revalidatePath('/schedule');
+    return Promise.resolve();
 }
 
 export async function getStats() {

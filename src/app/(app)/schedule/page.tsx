@@ -14,6 +14,18 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { PlusCircle, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { deleteScheduleAction } from './actions';
+import { ScheduleActions } from './components/schedule-actions';
+
 
 export default async function SchedulePage() {
   const scheduleData = await getSchedule();
@@ -28,9 +40,17 @@ export default async function SchedulePage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="font-headline text-3xl font-bold tracking-tight">
-        Jadwal Kelas
-      </h1>
+       <div className="flex items-center justify-between">
+        <h1 className="font-headline text-3xl font-bold tracking-tight">
+          Jadwal Kelas
+        </h1>
+        <Button asChild>
+          <Link href="/schedule/new">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Tambah Jadwal
+          </Link>
+        </Button>
+      </div>
 
       <Card>
         <CardHeader>
@@ -48,6 +68,7 @@ export default async function SchedulePage() {
                   {days.map((day) => (
                     <TableHead key={day}>{dayNames[day]}</TableHead>
                   ))}
+                   <TableHead className="w-[50px] text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -58,7 +79,7 @@ export default async function SchedulePage() {
                       const entry = event[day as keyof typeof event] as { course: string; teacher: string } | undefined;
                       return (
                         <TableCell key={day}>
-                          {entry ? (
+                          {entry && entry.course ? (
                             <div className="grid">
                               <span className="font-semibold">{entry.course}</span>
                               <span className="text-xs text-muted-foreground">{entry.teacher}</span>
@@ -69,6 +90,9 @@ export default async function SchedulePage() {
                         </TableCell>
                       );
                     })}
+                    <TableCell className="text-right">
+                       <ScheduleActions time={event.time} />
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
