@@ -1,3 +1,34 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "student-1",
+      "description": "Avatar for Liam Johnson",
+      "imageUrl": "https://images.unsplash.com/photo-1513258496099-48168024aec0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxtYWxlJTIwc3R1ZGVudHxlbnwwfHx8fDE3NjEzNzYzMTV8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "male student"
+    },
+    {
+      "id": "student-2",
+      "description": "Avatar for Olivia Smith",
+      "imageUrl": "https://images.unsplash.com/photo-1757876506562-0b0087ab3dcd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxmZW1hbGUlMjBzdHVkZW50fGVufDB8fHx8MTc2MTM0MTcwMHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "female student"
+    },
+    {
+      "id": "student-3",
+      "description": "Avatar for Noah Williams",
+      "imageUrl": "https://images.unsplash.com/photo-1558486084-246b7f8c377e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxtYWxlJTIwc3R1ZGVudCUyMHBvcnRyYWl0fGVufDB8fHx8MTc2MTQwNTg3N3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "male student portrait"
+    },
+    {
+      "id": "student-4",
+      "description": "Avatar for Emma Brown",
+      "imageUrl": "https://images.unsplash.com/photo-1690225368597-4befae8d0e7c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxmZW1hbGUlMjBzdHVkZW50JTIwcG9ydHJhaXR8ZW58MHx8fHwxNzYxNDA1ODc3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "female student portrait"
+    },
+    {
+      "id": "student-5",
+      "description": "Avatar for James Jones",
+      "imageUrl": "https://images.unsplash.com/photo-1631131428332-fa2ae83a84be?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxzdHVkZW50JTIwc21pbGluZ3xlbnwwfHx8fDE3NjEzMzgxMDR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "student smiling"
+    }
+  ]
 }
