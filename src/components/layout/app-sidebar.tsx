@@ -24,8 +24,8 @@ const menuItems = [
   { href: '/students', label: 'Siswa', icon: Users },
   { href: '/schedule', label: 'Jadwal', icon: CalendarDays },
   { href: '/announcements', label: 'Pengumuman', icon: Megaphone },
-  { href: '/grades', label: 'Nilai', icon: FileText, disabled: true },
-  { href: '/attendance', label: 'Kehadiran', icon: CheckSquare, disabled: false },
+  { href: '/grades', label: 'Nilai', icon: FileText },
+  { href: '/attendance', label: 'Kehadiran', icon: CheckSquare },
 ];
 
 export function AppSidebar() {
