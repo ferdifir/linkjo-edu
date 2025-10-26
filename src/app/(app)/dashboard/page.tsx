@@ -6,15 +6,16 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card';
-import { Users, Percent, FileText } from 'lucide-react';
+import { Users, Percent, FileText, User } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { TodaySchedule } from './components/today-schedule';
-
+import { getCurrentUser } from '@/lib/auth';
 
 export default async function DashboardPage() {
   const stats = await getStats();
   const announcements = await getAnnouncements();
   const schedule = await getSchedule();
+  const currentUser = await getCurrentUser();
 
   const statItems = [
     {
@@ -40,9 +41,22 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="font-headline text-3xl font-bold tracking-tight">
-        Dasbor Sekolah
-      </h1>
+      <div className="flex justify-between items-center">
+        <h1 className="font-headline text-3xl font-bold tracking-tight">
+          Dasbor Sekolah
+        </h1>
+        {currentUser && (
+          <Card className="p-4">
+            <div className="flex items-center space-x-4">
+              <User className="h-8 w-8 text-muted-foreground" />
+              <div>
+                <p className="text-sm font-medium">{currentUser.name}</p>
+                <p className="text-xs text-muted-foreground capitalize">{currentUser.role}</p>
+              </div>
+            </div>
+          </Card>
+        )}
+      </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {statItems.map((item) => (

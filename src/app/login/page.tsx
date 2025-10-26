@@ -7,7 +7,7 @@ export default function LoginPage() {
        <div className="mx-auto w-full max-w-md space-y-8">
         <div className="flex flex-col items-center">
             <GraduationCap className="h-16 w-16 text-primary" />
-            <h1 className="mt-4 text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+            <h1 className="mt-4 text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-10">
                 Selamat Datang di Linkjo
             </h1>
             <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
@@ -15,6 +15,11 @@ export default function LoginPage() {
             </p>
         </div>
         <LoginForm />
+        <div className="text-center text-sm text-gray-600 dark:text-gray-400 mt-4">
+          <p className="font-medium">Akun Demo:</p>
+          <p>Admin: admin@sekolah.edu / admin123</p>
+          <p>Guru: davis@sekolah.edu / teacher123</p>
+        </div>
       </div>
     </div>
   );

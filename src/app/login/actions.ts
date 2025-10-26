@@ -1,28 +1,29 @@
 'use server';
 
 import { redirect } from 'next/navigation';
-import { z } from 'zod';
+import { authenticateUser, type LoginCredentials } from '@/lib/api';
+import { createSession, destroySession } from '@/lib/auth';
 
-const loginFormSchema = z.object({
-  email: z.string().email(),
-  password: z.string(),
-});
+export async function loginAction(prevState: any, formData: FormData) {
+  const email = formData.get('email') as string;
+  const password = formData.get('password') as string;
 
-type LoginFormValues = z.infer<typeof loginFormSchema>;
+  const credentials: LoginCredentials = {
+    email,
+    password
+  };
 
+  const user = await authenticateUser(credentials);
 
-export async function loginAction(credentials: LoginFormValues) {
-  // For now, we'll just simulate a successful login and redirect.
-  // In a real app, you would validate credentials here.
-  
-  // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-
-  if (credentials.email === 'teacher@linkjo.com' && credentials.password === 'password') {
+  if (user) {
+    await createSession(user);
     redirect('/dashboard');
   }
 
-  return {
-    error: 'Email atau password salah. Silakan coba lagi.'
-  };
+  return { error: 'Email atau password salah' };
+}
+
+export async function logoutAction() {
+  await destroySession();
+  redirect('/login');
 }

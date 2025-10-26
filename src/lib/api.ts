@@ -1,7 +1,44 @@
 import { PrismaClient } from '@prisma/client';
 import type { Student, Announcement, ScheduleEvent, Grade, Course, AttendanceSession, StudentAttendance } from './types';
+import { compare } from 'bcrypt';
 
 const prisma = new PrismaClient();
+
+// --- Authentication ---
+export interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+export interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+}
+
+export async function authenticateUser(credentials: LoginCredentials): Promise<AuthUser | null> {
+ const user = await prisma.user.findUnique({
+    where: { email: credentials.email }
+  });
+
+  if (!user) {
+    return null; // User not found
+  }
+
+  const isPasswordValid = await compare(credentials.password, user.password);
+
+  if (!isPasswordValid) {
+    return null; // Invalid password
+  }
+
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role
+  };
+}
 
 // --- Students ---
 export async function getStudents(): Promise<Student[]> {

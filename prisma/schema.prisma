@@ -142,3 +142,21 @@ enum AttendanceStatus {
   PRESENT
   ABSENT
 }
+
+model User {
+  id        String   @id @default(cuid()) @map("id") @db.VarChar(255)
+  name      String
+  email     String   @unique
+  password  String   @db.Text  // In production, store hashed passwords
+  role      Role
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("users")
+}
+
+enum Role {
+  ADMIN
+  TEACHER
+  STUDENT
+}

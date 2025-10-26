@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import type { Student, Course, Announcement, ScheduleEvent } from '../src/lib/types';
+import { hash } from 'bcrypt';
 
 const prisma = new PrismaClient();
 
@@ -13,6 +14,38 @@ async function main() {
   await prisma.announcement.deleteMany({});
   await prisma.course.deleteMany({});
   await prisma.student.deleteMany({});
+  await prisma.user.deleteMany({});
+
+ // Tambahkan pengguna admin dan guru
+  await prisma.user.create({
+    data: {
+      id: 'USR001',
+      name: 'Admin Sekolah',
+      email: 'admin@sekolah.edu',
+      password: await hash('admin123', 10), // dalam produksi, pastikan untuk meng-hash password
+      role: 'ADMIN',
+    },
+  });
+
+  await prisma.user.create({
+    data: {
+      id: 'USR002',
+      name: 'Bpk. Davis',
+      email: 'davis@sekolah.edu',
+      password: await hash('teacher123', 10), // dalam produksi, pastikan untuk meng-hash password
+      role: 'TEACHER',
+    },
+  });
+
+  await prisma.user.create({
+    data: {
+      id: 'USR003',
+      name: 'Ibu Smith',
+      email: 'smith@sekolah.edu',
+      password: await hash('teacher123', 10), // dalam produksi, pastikan untuk meng-hash password
+      role: 'TEACHER',
+    },
+  });
 
  // Data dummy untuk courses
   const coursesData = [

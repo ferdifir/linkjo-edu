@@ -48,7 +48,12 @@ export default function LoginForm() {
   async function onSubmit(data: LoginFormValues) {
     setIsLoading(true);
     
-    const result = await loginAction(data);
+    // Convert data to FormData to match the server action
+    const formData = new FormData();
+    formData.append('email', data.email);
+    formData.append('password', data.password);
+
+    const result = await loginAction({}, formData);
 
     setIsLoading(false);
 

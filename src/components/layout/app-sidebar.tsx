@@ -10,14 +10,17 @@ import {
   Megaphone,
   FileText,
   CheckSquare,
+  LogOut,
 } from 'lucide-react';
 import {
   SidebarHeader,
-  SidebarContent,
+ SidebarContent,
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarFooter,
 } from '@/components/ui/sidebar';
+import { logoutAction } from '@/app/login/actions';
 
 const menuItems = [
   { href: '/dashboard', label: 'Dasbor', icon: LayoutDashboard },
@@ -46,7 +49,6 @@ export function AppSidebar() {
               <SidebarMenuButton
                 asChild
                 isActive={pathname.startsWith(item.href)}
-                disabled={item.disabled}
                 tooltip={{ children: item.label, side: 'right' }}
               >
                 <Link href={item.href}>
@@ -58,6 +60,20 @@ export function AppSidebar() {
           ))}
         </SidebarMenu>
       </SidebarContent>
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild>
+              <form action={logoutAction}>
+                <button type="submit" className="flex w-full items-center gap-2">
+                  <LogOut className="h-4 w-4" />
+                  <span>Logout</span>
+                </button>
+              </form>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
     </>
   );
 }
