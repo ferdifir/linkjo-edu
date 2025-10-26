@@ -1,299 +1,785 @@
-import { students, announcements, schedule, courses, attendanceSessions } from './mock-data';
+import { PrismaClient } from '@prisma/client';
 import type { Student, Announcement, ScheduleEvent, Grade, Course, AttendanceSession, StudentAttendance } from './types';
-import { revalidatePath } from 'next/cache';
+
+const prisma = new PrismaClient();
 
 // --- Students ---
 export async function getStudents(): Promise<Student[]> {
-  return Promise.resolve(students);
+  const dbStudents = await prisma.student.findMany();
+  const students: Student[] = [];
+
+  for (const dbStudent of dbStudents) {
+    const grades = await prisma.grade.findMany({
+      where: { studentId: dbStudent.id },
+      include: { course: true }
+    });
+
+    const courses = await prisma.studentEnrollment.findMany({
+      where: { studentId: dbStudent.id },
+      include: { course: true }
+    });
+
+    students.push({
+      id: dbStudent.id,
+      name: dbStudent.name,
+      email: dbStudent.email,
+      class: dbStudent.class,
+      avatar: dbStudent.avatar || '',
+      nfcCardId: dbStudent.nfcCardId || '',
+      attendance: 0, // Kehadiran akan dihitung secara dinamis jika diperlukan
+      grades: grades.map(g => ({
+        subject: g.course.name,
+        assignment: g.assignment,
+        grade: Number(g.grade)
+      })),
+      courses: courses.map(c => ({
+        id: c.course.id,
+        name: c.course.name,
+        teacher: c.course.teacher,
+        schedule: c.course.schedule || ''
+      }))
+    });
+  }
+
+  return students;
 }
 
 export async function getStudentById(id: string): Promise<Student | undefined> {
-  return Promise.resolve(students.find((s) => s.id === id));
+  const dbStudent = await prisma.student.findUnique({
+    where: { id }
+  });
+
+  if (!dbStudent) {
+    return undefined;
+  }
+
+  const grades = await prisma.grade.findMany({
+    where: { studentId: dbStudent.id },
+    include: { course: true }
+ });
+
+  const courses = await prisma.studentEnrollment.findMany({
+    where: { studentId: dbStudent.id },
+    include: { course: true }
+  });
+
+  return {
+    id: dbStudent.id,
+    name: dbStudent.name,
+    email: dbStudent.email,
+    class: dbStudent.class,
+    avatar: dbStudent.avatar || '',
+    nfcCardId: dbStudent.nfcCardId || '',
+    attendance: 0, // Kehadiran akan dihitung secara dinamis jika diperlukan
+    grades: grades.map(g => ({
+      subject: g.course.name,
+      assignment: g.assignment,
+      grade: Number(g.grade)
+    })),
+    courses: courses.map(c => ({
+      id: c.course.id,
+      name: c.course.name,
+      teacher: c.course.teacher,
+      schedule: c.course.schedule || ''
+    }))
+  };
 }
 
 export async function addStudent(studentData: Omit<Student, 'id' | 'grades' | 'courses' | 'avatar' | 'nfcCardId'>): Promise<Student> {
-  const newId = `S${String(students.length + 1).padStart(3, '0')}`;
-  const newStudent: Student = {
-    ...studentData,
-    id: newId,
-    avatar: `student-${(students.length % 5) + 1}`,
-    nfcCardId: `CARD-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+  const newId = `S${String(Date.now())}`;
+  const newStudent = await prisma.student.create({
+    data: {
+      id: newId,
+      name: studentData.name,
+      email: studentData.email,
+      class: studentData.class,
+      avatar: `student-${(Math.floor(Math.random() * 5) + 1)}`,
+      nfcCardId: `CARD-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+    }
+  });
+
+  return {
+    id: newStudent.id,
+    name: newStudent.name,
+    email: newStudent.email,
+    class: newStudent.class,
+    avatar: newStudent.avatar || '',
+    nfcCardId: newStudent.nfcCardId || '',
+    attendance: 0,
     grades: [],
-    courses: [],
+    courses: []
   };
-  students.push(newStudent);
-  revalidatePath('/students');
-  return Promise.resolve(newStudent);
 }
 
 export async function updateStudent(id: string, studentData: Partial<Omit<Student, 'id'>>): Promise<Student | undefined> {
-  const studentIndex = students.findIndex((s) => s.id === id);
-  if (studentIndex === -1) {
-    return Promise.resolve(undefined);
-  }
-  const updatedStudent = { ...students[studentIndex], ...studentData };
-  students[studentIndex] = updatedStudent;
-  revalidatePath(`/students`);
-  revalidatePath(`/students/${id}`);
-  return Promise.resolve(updatedStudent);
+  const updatedStudent = await prisma.student.update({
+    where: { id },
+    data: {
+      name: studentData.name,
+      email: studentData.email,
+      class: studentData.class,
+    }
+  });
+
+  if (!updatedStudent) {
+    return undefined;
+ }
+
+  const grades = await prisma.grade.findMany({
+    where: { studentId: updatedStudent.id },
+    include: { course: true }
+ });
+
+  const courses = await prisma.studentEnrollment.findMany({
+    where: { studentId: updatedStudent.id },
+    include: { course: true }
+  });
+
+  return {
+    id: updatedStudent.id,
+    name: updatedStudent.name,
+    email: updatedStudent.email,
+    class: updatedStudent.class,
+    avatar: updatedStudent.avatar || '',
+    nfcCardId: updatedStudent.nfcCardId || '',
+    attendance: 0,
+    grades: grades.map(g => ({
+      subject: g.course.name,
+      assignment: g.assignment,
+      grade: Number(g.grade)
+    })),
+    courses: courses.map(c => ({
+      id: c.course.id,
+      name: c.course.name,
+      teacher: c.course.teacher,
+      schedule: c.course.schedule || ''
+    }))
+  };
 }
 
 export async function deleteStudent(id: string): Promise<void> {
-  const studentIndex = students.findIndex((s) => s.id === id);
-  if (studentIndex > -1) {
-    students.splice(studentIndex, 1);
-  }
-  revalidatePath('/students');
-  return Promise.resolve();
+  await prisma.student.delete({
+    where: { id }
+  });
 }
 
 
 // --- Announcements ---
 export async function getAnnouncements(): Promise<Announcement[]> {
-  return Promise.resolve(
-    announcements.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-  );
+  const dbAnnouncements = await prisma.announcement.findMany({
+    orderBy: { date: 'desc' }
+  });
+
+  return dbAnnouncements.map(a => ({
+    id: a.id,
+    title: a.title,
+    content: a.content,
+    date: a.date.toISOString().split('T')[0],
+    author: a.author
+  }));
 }
 
 export async function getAnnouncementById(id: string): Promise<Announcement | undefined> {
-  return Promise.resolve(announcements.find((a) => a.id === id));
+  const dbAnnouncement = await prisma.announcement.findUnique({
+    where: { id }
+  });
+
+  if (!dbAnnouncement) {
+    return undefined;
+  }
+
+  return {
+    id: dbAnnouncement.id,
+    title: dbAnnouncement.title,
+    content: dbAnnouncement.content,
+    date: dbAnnouncement.date.toISOString().split('T')[0],
+    author: dbAnnouncement.author
+  };
 }
 
 export async function addAnnouncement(announcementData: Omit<Announcement, 'id' | 'date'>): Promise<Announcement> {
-  const newId = `A${String(announcements.length + 1).padStart(3, '0')}`;
-  const newAnnouncement: Announcement = {
-    ...announcementData,
-    id: newId,
-    date: new Date().toISOString().split('T')[0],
-  };
-  announcements.push(newAnnouncement);
-  revalidatePath('/announcements');
-  return Promise.resolve(newAnnouncement);
+  const newAnnouncement = await prisma.announcement.create({
+    data: {
+      title: announcementData.title,
+      content: announcementData.content,
+      author: announcementData.author,
+      date: new Date()
+    }
+  });
+
+  return {
+    id: newAnnouncement.id,
+    title: newAnnouncement.title,
+    content: newAnnouncement.content,
+    date: newAnnouncement.date.toISOString().split('T')[0],
+    author: newAnnouncement.author
+ };
 }
 
 export async function updateAnnouncement(id: string, announcementData: Partial<Omit<Announcement, 'id'>>): Promise<Announcement | undefined> {
-    const announcementIndex = announcements.findIndex((a) => a.id === id);
-    if (announcementIndex === -1) {
-        return Promise.resolve(undefined);
+  const updatedAnnouncement = await prisma.announcement.update({
+    where: { id },
+    data: {
+      title: announcementData.title,
+      content: announcementData.content,
+      author: announcementData.author
     }
-    const updatedAnnouncement = { ...announcements[announcementIndex], ...announcementData };
-    announcements[announcementIndex] = updatedAnnouncement;
-    revalidatePath(`/announcements`);
-    return Promise.resolve(updatedAnnouncement);
+  });
+
+  return {
+    id: updatedAnnouncement.id,
+    title: updatedAnnouncement.title,
+    content: updatedAnnouncement.content,
+    date: updatedAnnouncement.date.toISOString().split('T')[0],
+    author: updatedAnnouncement.author
+ };
 }
 
 export async function deleteAnnouncement(id: string): Promise<void> {
-    const announcementIndex = announcements.findIndex((a) => a.id === id);
-    if (announcementIndex > -1) {
-        announcements.splice(announcementIndex, 1);
-    }
-    revalidatePath('/announcements');
-    return Promise.resolve();
+  await prisma.announcement.delete({
+    where: { id }
+ });
 }
 
 // --- Schedule ---
 export async function getSchedule(): Promise<ScheduleEvent[]> {
-  return Promise.resolve(schedule.sort((a, b) => a.time.localeCompare(b.time)));
+  const dbSchedules = await prisma.schedule.findMany({
+    orderBy: { time: 'asc' }
+  });
+
+  const scheduleEvents: ScheduleEvent[] = [];
+
+  for (const dbSchedule of dbSchedules) {
+    const scheduleEvent: ScheduleEvent = {
+      time: dbSchedule.time
+    };
+
+    if (dbSchedule.mondayCourseId) {
+      const course = await prisma.course.findUnique({
+        where: { id: dbSchedule.mondayCourseId }
+      });
+      if (course) {
+        scheduleEvent.monday = {
+          course: course.name,
+          teacher: course.teacher
+        };
+      }
+    }
+
+    if (dbSchedule.tuesdayCourseId) {
+      const course = await prisma.course.findUnique({
+        where: { id: dbSchedule.tuesdayCourseId }
+      });
+      if (course) {
+        scheduleEvent.tuesday = {
+          course: course.name,
+          teacher: course.teacher
+        };
+      }
+    }
+
+    if (dbSchedule.wednesdayCourseId) {
+      const course = await prisma.course.findUnique({
+        where: { id: dbSchedule.wednesdayCourseId }
+      });
+      if (course) {
+        scheduleEvent.wednesday = {
+          course: course.name,
+          teacher: course.teacher
+        };
+      }
+    }
+
+    if (dbSchedule.thursdayCourseId) {
+      const course = await prisma.course.findUnique({
+        where: { id: dbSchedule.thursdayCourseId }
+      });
+      if (course) {
+        scheduleEvent.thursday = {
+          course: course.name,
+          teacher: course.teacher
+        };
+      }
+    }
+
+    if (dbSchedule.fridayCourseId) {
+      const course = await prisma.course.findUnique({
+        where: { id: dbSchedule.fridayCourseId }
+      });
+      if (course) {
+        scheduleEvent.friday = {
+          course: course.name,
+          teacher: course.teacher
+        };
+      }
+    }
+
+    scheduleEvents.push(scheduleEvent);
+  }
+
+  return scheduleEvents;
 }
 
 export async function getScheduleByTime(time: string): Promise<ScheduleEvent | undefined> {
-  return Promise.resolve(schedule.find((s) => s.time === time));
+  const dbSchedule = await prisma.schedule.findFirst({
+    where: { time }
+  });
+
+  if (!dbSchedule) {
+    return undefined;
+  }
+
+  const scheduleEvent: ScheduleEvent = {
+    time: dbSchedule.time
+  };
+
+  if (dbSchedule.mondayCourseId) {
+    const course = await prisma.course.findUnique({
+      where: { id: dbSchedule.mondayCourseId }
+    });
+    if (course) {
+      scheduleEvent.monday = {
+        course: course.name,
+        teacher: course.teacher
+      };
+    }
+ }
+
+  if (dbSchedule.tuesdayCourseId) {
+    const course = await prisma.course.findUnique({
+      where: { id: dbSchedule.tuesdayCourseId }
+    });
+    if (course) {
+      scheduleEvent.tuesday = {
+        course: course.name,
+        teacher: course.teacher
+      };
+    }
+  }
+
+  if (dbSchedule.wednesdayCourseId) {
+    const course = await prisma.course.findUnique({
+      where: { id: dbSchedule.wednesdayCourseId }
+    });
+    if (course) {
+      scheduleEvent.wednesday = {
+        course: course.name,
+        teacher: course.teacher
+      };
+    }
+  }
+
+  if (dbSchedule.thursdayCourseId) {
+    const course = await prisma.course.findUnique({
+      where: { id: dbSchedule.thursdayCourseId }
+    });
+    if (course) {
+      scheduleEvent.thursday = {
+        course: course.name,
+        teacher: course.teacher
+      };
+    }
+  }
+
+  if (dbSchedule.fridayCourseId) {
+    const course = await prisma.course.findUnique({
+      where: { id: dbSchedule.fridayCourseId }
+    });
+    if (course) {
+      scheduleEvent.friday = {
+        course: course.name,
+        teacher: course.teacher
+      };
+    }
+  }
+
+  return scheduleEvent;
 }
 
 export async function addSchedule(event: ScheduleEvent): Promise<ScheduleEvent> {
-  const existingEvent = schedule.find(e => e.time === event.time);
+  const existingEvent = await prisma.schedule.findFirst({
+    where: { time: event.time }
+  });
   if (existingEvent) {
     throw new Error("Waktu yang sama sudah ada di jadwal.");
   }
-  schedule.push(event);
-  revalidatePath('/schedule');
-  return Promise.resolve(event);
+
+  await prisma.schedule.create({
+    data: {
+      time: event.time,
+      mondayCourseId: event.monday ? (await prisma.course.findFirst({ where: { name: event.monday.course } }))?.id : null,
+      mondayTeacher: event.monday?.teacher || null,
+      tuesdayCourseId: event.tuesday ? (await prisma.course.findFirst({ where: { name: event.tuesday.course } }))?.id : null,
+      tuesdayTeacher: event.tuesday?.teacher || null,
+      wednesdayCourseId: event.wednesday ? (await prisma.course.findFirst({ where: { name: event.wednesday.course } }))?.id : null,
+      wednesdayTeacher: event.wednesday?.teacher || null,
+      thursdayCourseId: event.thursday ? (await prisma.course.findFirst({ where: { name: event.thursday.course } }))?.id : null,
+      thursdayTeacher: event.thursday?.teacher || null,
+      fridayCourseId: event.friday ? (await prisma.course.findFirst({ where: { name: event.friday.course } }))?.id : null,
+      fridayTeacher: event.friday?.teacher || null,
+    }
+ });
+
+  return event;
 }
 
 export async function updateSchedule(time: string, event: ScheduleEvent): Promise<ScheduleEvent> {
-  const eventIndex = schedule.findIndex((e) => e.time === time);
-  if (eventIndex === -1) {
+  const dbSchedule = await prisma.schedule.findFirst({
+    where: { time }
+  });
+
+  if (!dbSchedule) {
     throw new Error("Jadwal tidak ditemukan.");
   }
-  schedule[eventIndex] = event;
-  revalidatePath('/schedule');
-  return Promise.resolve(event);
+
+  const updatedSchedule = await prisma.schedule.update({
+    where: { id: dbSchedule.id },
+    data: {
+      mondayCourseId: event.monday ? (await prisma.course.findFirst({ where: { name: event.monday.course } }))?.id : null,
+      mondayTeacher: event.monday?.teacher || null,
+      tuesdayCourseId: event.tuesday ? (await prisma.course.findFirst({ where: { name: event.tuesday.course } }))?.id : null,
+      tuesdayTeacher: event.tuesday?.teacher || null,
+      wednesdayCourseId: event.wednesday ? (await prisma.course.findFirst({ where: { name: event.wednesday.course } }))?.id : null,
+      wednesdayTeacher: event.wednesday?.teacher || null,
+      thursdayCourseId: event.thursday ? (await prisma.course.findFirst({ where: { name: event.thursday.course } }))?.id : null,
+      thursdayTeacher: event.thursday?.teacher || null,
+      fridayCourseId: event.friday ? (await prisma.course.findFirst({ where: { name: event.friday.course } }))?.id : null,
+      fridayTeacher: event.friday?.teacher || null,
+    }
+  });
+
+  return event;
 }
 
 export async function deleteSchedule(time: string): Promise<void> {
-    const eventIndex = schedule.findIndex((e) => e.time === time);
-    if (eventIndex > -1) {
-        schedule.splice(eventIndex, 1);
-    }
-    revalidatePath('/schedule');
-    return Promise.resolve();
+  const dbSchedule = await prisma.schedule.findFirst({
+    where: { time }
+  });
+
+ if (dbSchedule) {
+    await prisma.schedule.delete({
+      where: { id: dbSchedule.id }
+    });
+  }
 }
 
 // --- Stats & Courses ---
 export async function getStats() {
-    return Promise.resolve({
-        totalStudents: students.length,
-        averageAttendance: Math.round(students.reduce((acc, s) => acc + s.attendance, 0) / students.length) || 0,
-        averageGrade: Math.round(students.reduce((acc, s) => acc + s.grades.reduce((gAcc, g) => gAcc + g.grade, 0) / (s.grades.length || 1), 0) / (students.length || 1)) || 0,
-    });
+  const totalStudents = await prisma.student.count();
+  const allGrades = await prisma.grade.findMany();
+
+  let averageGrade = 0;
+  if (allGrades.length > 0) {
+    const sumGrades = allGrades.reduce((sum, g) => sum + Number(g.grade), 0);
+    averageGrade = Math.round(sumGrades / allGrades.length);
+  }
+
+  return {
+    totalStudents,
+    averageAttendance: 0, // Kehadiran akan dihitung secara dinamis jika diperlukan
+    averageGrade
+  };
 }
 
 export async function getCourses(): Promise<Course[]> {
-    return Promise.resolve(courses);
+ const dbCourses = await prisma.course.findMany();
+
+  return dbCourses.map(c => ({
+    id: c.id,
+    name: c.name,
+    teacher: c.teacher,
+    schedule: c.schedule || ''
+  }));
 }
 
 // --- Grades ---
 export type GradeWithId = Grade & { id: string, studentId: string, studentName: string, studentAvatar: string };
 
 export async function getGrades(): Promise<GradeWithId[]> {
-  const allGrades = students.flatMap((student, studentIndex) =>
-    student.grades.map((grade, gradeIndex) => ({
-      ...grade,
-      id: `${student.id}-g${gradeIndex}`,
-      studentId: student.id,
-      studentName: student.name,
-      studentAvatar: student.avatar,
-    }))
-  ).sort((a, b) => a.studentName.localeCompare(b.studentName) || a.subject.localeCompare(b.subject));
-  return Promise.resolve(allGrades);
+ const dbGrades = await prisma.grade.findMany({
+    include: {
+      student: true,
+      course: true
+    }
+ });
+
+  return dbGrades.map(g => ({
+    id: g.id,
+    subject: g.course.name,
+    assignment: g.assignment,
+    grade: Number(g.grade),
+    studentId: g.studentId,
+    studentName: g.student.name,
+    studentAvatar: g.student.avatar || ''
+  }));
 }
 
 export async function getGradeById(gradeId: string): Promise<GradeWithId | undefined> {
-    const allGrades = await getGrades();
-    return Promise.resolve(allGrades.find(g => g.id === gradeId));
+  const dbGrade = await prisma.grade.findUnique({
+    where: { id: gradeId },
+    include: {
+      student: true,
+      course: true
+    }
+  });
+
+  if (!dbGrade) {
+    return undefined;
+  }
+
+  return {
+    id: dbGrade.id,
+    subject: dbGrade.course.name,
+    assignment: dbGrade.assignment,
+    grade: Number(dbGrade.grade),
+    studentId: dbGrade.studentId,
+    studentName: dbGrade.student.name,
+    studentAvatar: dbGrade.student.avatar || ''
+  };
 }
 
 type GradeInput = { studentId: string, subject: string, assignment: string, grade: number };
 
 export async function addGrade(gradeData: GradeInput): Promise<Grade> {
-    const student = students.find(s => s.id === gradeData.studentId);
-    if (!student) {
-        throw new Error("Siswa tidak ditemukan.");
+  const course = await prisma.course.findFirst({
+    where: { name: gradeData.subject }
+  });
+
+  if (!course) {
+    throw new Error("Mata pelajaran tidak ditemukan.");
+  }
+
+  const newGrade = await prisma.grade.create({
+    data: {
+      assignment: gradeData.assignment,
+      grade: gradeData.grade,
+      studentId: gradeData.studentId,
+      courseId: course.id
     }
-    const newGrade = { subject: gradeData.subject, assignment: gradeData.assignment, grade: gradeData.grade };
-    student.grades.push(newGrade);
-    revalidatePath('/grades');
-    revalidatePath(`/students/${gradeData.studentId}`);
-    return Promise.resolve(newGrade);
+  });
+
+  return {
+    subject: course.name,
+    assignment: newGrade.assignment,
+    grade: Number(newGrade.grade)
+  };
 }
 
 export async function updateGrade(gradeId: string, gradeData: GradeInput): Promise<Grade> {
-    const student = students.find(s => s.id === gradeData.studentId);
-    if (!student) {
-        throw new Error("Siswa tidak ditemukan.");
-    }
-    
-    const [studentId, gradeIndexStr] = gradeId.split('-g');
-    const gradeIndex = parseInt(gradeIndexStr, 10);
-    
-    const originalStudent = students.find(s => s.id === studentId);
-    if (!originalStudent || !originalStudent.grades[gradeIndex]) {
-        throw new Error("Nilai asli tidak ditemukan.");
-    }
+  const course = await prisma.course.findFirst({
+    where: { name: gradeData.subject }
+  });
 
-    // If student changed, remove from old and add to new
-    if (originalStudent.id !== student.id) {
-        originalStudent.grades.splice(gradeIndex, 1);
-        const newGrade = { subject: gradeData.subject, assignment: gradeData.assignment, grade: gradeData.grade };
-        student.grades.push(newGrade);
-        revalidatePath(`/students/${originalStudent.id}`);
-    } else {
-        const updatedGrade = {
-            ...student.grades[gradeIndex],
-            subject: gradeData.subject,
-            assignment: gradeData.assignment,
-            grade: gradeData.grade
-        };
-        student.grades[gradeIndex] = updatedGrade;
-    }
+  if (!course) {
+    throw new Error("Mata pelajaran tidak ditemukan.");
+  }
 
-    revalidatePath('/grades');
-    revalidatePath(`/students/${gradeData.studentId}`);
-    return Promise.resolve(gradeData);
+  const updatedGrade = await prisma.grade.update({
+    where: { id: gradeId },
+    data: {
+      assignment: gradeData.assignment,
+      grade: gradeData.grade,
+      studentId: gradeData.studentId,
+      courseId: course.id
+    }
+ });
+
+  return {
+    subject: course.name,
+    assignment: updatedGrade.assignment,
+    grade: Number(updatedGrade.grade)
+  };
 }
 
 export async function deleteGrade(gradeId: string): Promise<void> {
-    const [studentId, gradeIndexStr] = gradeId.split('-g');
-    const gradeIndex = parseInt(gradeIndexStr, 10);
-    const student = students.find(s => s.id === studentId);
-
-    if (student && student.grades[gradeIndex]) {
-        student.grades.splice(gradeIndex, 1);
-        revalidatePath('/grades');
-        revalidatePath(`/students/${studentId}`);
-    } else {
-        throw new Error("Nilai tidak ditemukan.");
-    }
-    return Promise.resolve();
+  await prisma.grade.delete({
+    where: { id: gradeId }
+  });
 }
 
 // --- Attendance Sessions ---
 
 export async function startAttendanceSession(courseName: string, teacherName: string): Promise<AttendanceSession> {
-    const sessionStudents = students.filter(s => s.courses.some(c => c.name === courseName));
-    if (sessionStudents.length === 0) {
-        throw new Error(`Tidak ada siswa yang terdaftar di mata pelajaran ${courseName}`);
-    }
+  const course = await prisma.course.findFirst({
+    where: { name: courseName }
+  });
 
-    const newSession: AttendanceSession = {
-        id: `SESS-${Date.now()}`,
-        courseName,
-        teacherName,
-        class: sessionStudents[0]?.class || 'N/A',
-        students: sessionStudents.map(s => ({
-            studentId: s.id,
-            name: s.name,
-            status: 'absent',
-            avatar: s.avatar
-        })),
-        isActive: true,
-        startTime: new Date().toISOString(),
-    };
-    attendanceSessions.push(newSession);
-    revalidatePath(`/take-attendance/${newSession.id}`);
-    return Promise.resolve(newSession);
+  if (!course) {
+    throw new Error(`Mata pelajaran ${courseName} tidak ditemukan`);
+  }
+
+  const enrolledStudents = await prisma.studentEnrollment.findMany({
+    where: { courseId: course.id },
+    include: { student: true }
+ });
+
+  if (enrolledStudents.length === 0) {
+    throw new Error(`Tidak ada siswa yang terdaftar di mata pelajaran ${courseName}`);
+  }
+
+  const newSession = await prisma.attendanceSession.create({
+    data: {
+      courseId: course.id,
+      teacherName,
+      class: enrolledStudents[0]?.student.class || 'N/A',
+      isActive: true,
+      startTime: new Date(),
+    }
+  });
+
+  // Buat record kehadiran untuk setiap siswa
+  for (const enrollment of enrolledStudents) {
+    await prisma.attendanceRecord.create({
+      data: {
+        sessionId: newSession.id,
+        studentId: enrollment.studentId,
+        status: 'ABSENT'
+      }
+    });
+  }
+
+  const sessionStudents: StudentAttendance[] = enrolledStudents.map(e => ({
+    studentId: e.studentId,
+    name: e.student.name,
+    status: 'absent',
+    avatar: e.student.avatar || ''
+  }));
+
+  return {
+    id: newSession.id,
+    courseName,
+    teacherName,
+    class: newSession.class,
+    students: sessionStudents,
+    isActive: newSession.isActive,
+    startTime: newSession.startTime.toISOString()
+  };
 }
 
 export async function getAttendanceSession(sessionId: string): Promise<AttendanceSession | undefined> {
-    return Promise.resolve(attendanceSessions.find(s => s.id === sessionId));
+  const session = await prisma.attendanceSession.findUnique({
+    where: { id: sessionId },
+    include: {
+      course: true,
+      records: {
+        include: {
+          student: true
+        }
+      }
+    }
+  });
+
+  if (!session) {
+    return undefined;
+ }
+
+  const sessionStudents: StudentAttendance[] = session.records.map(r => ({
+    studentId: r.studentId,
+    name: r.student.name,
+    status: r.status.toLowerCase() as 'present' | 'absent',
+    avatar: r.student.avatar || ''
+  }));
+
+  return {
+    id: session.id,
+    courseName: session.course.name,
+    teacherName: session.teacherName,
+    class: session.class,
+    students: sessionStudents,
+    isActive: session.isActive,
+    startTime: session.startTime.toISOString(),
+    endTime: session.endTime ? session.endTime.toISOString() : undefined
+  };
 }
 
 export async function markStudentPresent(sessionId: string, nfcCardId: string): Promise<StudentAttendance | undefined> {
-    const session = attendanceSessions.find(s => s.id === sessionId);
-    if (!session || !session.isActive) {
-        throw new Error('Sesi kehadiran tidak aktif atau tidak ditemukan.');
-    }
+  const session = await prisma.attendanceSession.findUnique({
+    where: { id: sessionId }
+  });
 
-    const studentToMark = students.find(s => s.nfcCardId === nfcCardId);
-    if (!studentToMark) {
-        throw new Error('Siswa dengan kartu ini tidak ditemukan.');
-    }
+  if (!session || !session.isActive) {
+    throw new Error('Sesi kehadiran tidak aktif atau tidak ditemukan.');
+  }
 
-    const studentInSession = session.students.find(s => s.studentId === studentToMark.id);
-    if (!studentInSession) {
-        throw new Error('Siswa ini tidak terdaftar dalam sesi ini.');
-    }
+  const student = await prisma.student.findFirst({
+    where: { nfcCardId }
+  });
 
-    if (studentInSession.status === 'present') {
-        // Already marked, just return the status
-        return Promise.resolve(studentInSession);
+  if (!student) {
+    throw new Error('Siswa dengan kartu ini tidak ditemukan.');
+  }
+
+  const attendanceRecord = await prisma.attendanceRecord.findFirst({
+    where: {
+      sessionId,
+      studentId: student.id
     }
-    
-    studentInSession.status = 'present';
-    revalidatePath(`/take-attendance/${sessionId}`);
-    return Promise.resolve(studentInSession);
+  });
+
+  if (!attendanceRecord) {
+    throw new Error('Siswa ini tidak terdaftar dalam sesi ini.');
+  }
+
+  if (attendanceRecord.status === 'PRESENT') {
+    // Sudah hadir, kembalikan status
+    return {
+      studentId: student.id,
+      name: student.name,
+      status: 'present',
+      avatar: student.avatar || ''
+    };
+  }
+
+  // Update status kehadiran
+  await prisma.attendanceRecord.update({
+    where: { id: attendanceRecord.id },
+    data: { status: 'PRESENT' }
+  });
+
+  return {
+    studentId: student.id,
+    name: student.name,
+    status: 'present',
+    avatar: student.avatar || ''
+  };
 }
 
-
 export async function endAttendanceSession(sessionId: string): Promise<AttendanceSession | undefined> {
-    const session = attendanceSessions.find(s => s.id === sessionId);
-    if (session) {
-        session.isActive = false;
-        session.endTime = new Date().toISOString();
-        // Here you would typically save the final attendance to the database
-        // For now, we just update the in-memory session.
-        revalidatePath(`/take-attendance/${sessionId}`);
-        revalidatePath(`/dashboard`);
+  const session = await prisma.attendanceSession.update({
+    where: { id: sessionId },
+    data: {
+      isActive: false,
+      endTime: new Date()
+    },
+    include: {
+      course: true,
+      records: {
+        include: {
+          student: true
+        }
+      }
     }
-    return Promise.resolve(session);
+  });
+
+  if (!session) {
+    return undefined;
+ }
+
+  const sessionStudents: StudentAttendance[] = session.records.map(r => ({
+    studentId: r.studentId,
+    name: r.student.name,
+    status: r.status.toLowerCase() as 'present' | 'absent',
+    avatar: r.student.avatar || ''
+  }));
+
+  return {
+    id: session.id,
+    courseName: session.course.name,
+    teacherName: session.teacherName,
+    class: session.class,
+    students: sessionStudents,
+    isActive: session.isActive,
+    startTime: session.startTime.toISOString(),
+    endTime: session.endTime ? session.endTime.toISOString() : undefined
+  };
 }

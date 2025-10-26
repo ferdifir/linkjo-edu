@@ -1,0 +1,144 @@
+// Schema Prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"  // atau provider lain seperti postgresql, sqlite, sqlserver
+  url      = env("DATABASE_URL")
+}
+
+model Student {
+  id          String   @id @default(cuid()) @map("id") @db.VarChar(255)
+  name        String
+  email       String   @unique
+  class       String
+  avatar      String?
+  nfcCardId   String? @unique
+  grades      Grade[]
+  enrollments StudentEnrollment[]
+  attendance  AttendanceRecord[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("students")
+}
+
+model Course {
+ id           String           @id @default(cuid()) @map("id") @db.VarChar(255)
+  name         String
+ teacher      String
+ schedule     String?
+  grades       Grade[]
+  enrollments StudentEnrollment[]
+  mondaySchedules    Schedule[] @relation("MondayCourse")
+  tuesdaySchedules   Schedule[] @relation("TuesdayCourse")
+  wednesdaySchedules Schedule[] @relation("WednesdayCourse")
+  thursdaySchedules  Schedule[] @relation("ThursdayCourse")
+  fridaySchedules    Schedule[] @relation("FridayCourse")
+  attendance   AttendanceSession[]
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  
+  @@map("courses")
+}
+
+model Announcement {
+  id        String   @id @default(cuid()) @map("id") @db.VarChar(255)
+  title     String
+  content   String   @db.Text
+  author    String
+  date      DateTime @db.Date
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("announcements")
+}
+
+model Schedule {
+  id               String   @id @default(cuid()) @map("id") @db.VarChar(255)
+  time             String
+  mondayCourseId   String?
+  mondayTeacher    String?
+  tuesdayCourseId  String?
+  tuesdayTeacher   String?
+  wednesdayCourseId String?
+  wednesdayTeacher String?
+  thursdayCourseId String?
+  thursdayTeacher  String?
+  fridayCourseId   String?
+  fridayTeacher    String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  // Relasi ke Course
+  mondayCourse     Course?  @relation("MondayCourse", fields: [mondayCourseId], references: [id], onDelete: SetNull)
+  tuesdayCourse    Course?  @relation("TuesdayCourse", fields: [tuesdayCourseId], references: [id], onDelete: SetNull)
+  wednesdayCourse  Course?  @relation("WednesdayCourse", fields: [wednesdayCourseId], references: [id], onDelete: SetNull)
+  thursdayCourse   Course?  @relation("ThursdayCourse", fields: [thursdayCourseId], references: [id], onDelete: SetNull)
+  fridayCourse     Course?  @relation("FridayCourse", fields: [fridayCourseId], references: [id], onDelete: SetNull)
+  
+  @@map("schedules")
+}
+
+model Grade {
+  id         String   @id @default(cuid()) @map("id") @db.VarChar(255)
+  assignment String
+ grade      Decimal  @db.Decimal(5, 2)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  // Relasi
+  studentId  String
+  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  courseId   String
+  course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  
+  @@map("grades")
+}
+
+model AttendanceSession {
+  id         String           @id @default(cuid()) @map("id") @db.VarChar(255)
+  courseId   String
+  course     Course           @relation(fields: [courseId], references: [id])
+  teacherName String
+ class      String
+ isActive   Boolean          @default(true)
+  startTime  DateTime         @default(now())
+  endTime    DateTime?
+  records    AttendanceRecord[]
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  
+  @@map("attendance_sessions")
+}
+
+model AttendanceRecord {
+  id         String           @id @default(cuid()) @map("id") @db.VarChar(255)
+  sessionId  String
+  session    AttendanceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  studentId  String
+  student    Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+ status     AttendanceStatus @default(ABSENT)
+  createdAt  DateTime         @default(now())
+  
+  @@unique([sessionId, studentId])
+  @@map("attendance_records")
+}
+
+model StudentEnrollment {
+  id         String           @id @default(cuid()) @map("id") @db.VarChar(255)
+  studentId  String
+ student    Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  courseId   String
+  course     Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  enrolledAt DateTime         @default(now())
+  
+  @@unique([studentId, courseId])
+  @@map("student_enrollments")
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+}
