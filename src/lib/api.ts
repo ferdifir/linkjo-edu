@@ -1,5 +1,5 @@
-import { students, announcements, schedule, courses } from './mock-data';
-import type { Student, Announcement, ScheduleEvent, Grade, Course } from './types';
+import { students, announcements, schedule, courses, attendanceSessions } from './mock-data';
+import type { Student, Announcement, ScheduleEvent, Grade, Course, AttendanceSession, StudentAttendance } from './types';
 import { revalidatePath } from 'next/cache';
 
 // --- Students ---
@@ -11,12 +11,13 @@ export async function getStudentById(id: string): Promise<Student | undefined> {
   return Promise.resolve(students.find((s) => s.id === id));
 }
 
-export async function addStudent(studentData: Omit<Student, 'id' | 'grades' | 'courses' | 'avatar'>): Promise<Student> {
+export async function addStudent(studentData: Omit<Student, 'id' | 'grades' | 'courses' | 'avatar' | 'nfcCardId'>): Promise<Student> {
   const newId = `S${String(students.length + 1).padStart(3, '0')}`;
   const newStudent: Student = {
     ...studentData,
     id: newId,
     avatar: `student-${(students.length % 5) + 1}`,
+    nfcCardId: `CARD-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
     grades: [],
     courses: [],
   };
@@ -224,4 +225,75 @@ export async function deleteGrade(gradeId: string): Promise<void> {
         throw new Error("Nilai tidak ditemukan.");
     }
     return Promise.resolve();
+}
+
+// --- Attendance Sessions ---
+
+export async function startAttendanceSession(courseName: string, teacherName: string): Promise<AttendanceSession> {
+    const sessionStudents = students.filter(s => s.courses.some(c => c.name === courseName));
+    if (sessionStudents.length === 0) {
+        throw new Error(`Tidak ada siswa yang terdaftar di mata pelajaran ${courseName}`);
+    }
+
+    const newSession: AttendanceSession = {
+        id: `SESS-${Date.now()}`,
+        courseName,
+        teacherName,
+        class: sessionStudents[0]?.class || 'N/A',
+        students: sessionStudents.map(s => ({
+            studentId: s.id,
+            name: s.name,
+            status: 'absent',
+            avatar: s.avatar
+        })),
+        isActive: true,
+        startTime: new Date().toISOString(),
+    };
+    attendanceSessions.push(newSession);
+    revalidatePath(`/take-attendance/${newSession.id}`);
+    return Promise.resolve(newSession);
+}
+
+export async function getAttendanceSession(sessionId: string): Promise<AttendanceSession | undefined> {
+    return Promise.resolve(attendanceSessions.find(s => s.id === sessionId));
+}
+
+export async function markStudentPresent(sessionId: string, nfcCardId: string): Promise<StudentAttendance | undefined> {
+    const session = attendanceSessions.find(s => s.id === sessionId);
+    if (!session || !session.isActive) {
+        throw new Error('Sesi kehadiran tidak aktif atau tidak ditemukan.');
+    }
+
+    const studentToMark = students.find(s => s.nfcCardId === nfcCardId);
+    if (!studentToMark) {
+        throw new Error('Siswa dengan kartu ini tidak ditemukan.');
+    }
+
+    const studentInSession = session.students.find(s => s.studentId === studentToMark.id);
+    if (!studentInSession) {
+        throw new Error('Siswa ini tidak terdaftar dalam sesi ini.');
+    }
+
+    if (studentInSession.status === 'present') {
+        // Already marked, just return the status
+        return Promise.resolve(studentInSession);
+    }
+    
+    studentInSession.status = 'present';
+    revalidatePath(`/take-attendance/${sessionId}`);
+    return Promise.resolve(studentInSession);
+}
+
+
+export async function endAttendanceSession(sessionId: string): Promise<AttendanceSession | undefined> {
+    const session = attendanceSessions.find(s => s.id === sessionId);
+    if (session) {
+        session.isActive = false;
+        session.endTime = new Date().toISOString();
+        // Here you would typically save the final attendance to the database
+        // For now, we just update the in-memory session.
+        revalidatePath(`/take-attendance/${sessionId}`);
+        revalidatePath(`/dashboard`);
+    }
+    return Promise.resolve(session);
 }

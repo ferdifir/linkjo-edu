@@ -1,4 +1,4 @@
-import type { Student, Course, Announcement, ScheduleEvent } from './types';
+import type { Student, Course, Announcement, ScheduleEvent, AttendanceSession } from './types';
 
 export const courses: Course[] = [
   { id: 'C101', name: 'Aljabar II', teacher: 'Bpk. Davis', schedule: 'Sen-Rab-Jum 9-10' },
@@ -15,6 +15,7 @@ export let students: Student[] = [
     email: 'liam.johnson@example.com',
     class: 'Kelas 10',
     avatar: 'student-1',
+    nfcCardId: '04-6A-A9-C5-25-3C-80',
     attendance: 95,
     grades: [
       { subject: 'Aljabar II', assignment: 'Ujian Tengah Semester', grade: 88 },
@@ -30,6 +31,7 @@ export let students: Student[] = [
     email: 'olivia.smith@example.com',
     class: 'Kelas 10',
     avatar: 'student-2',
+    nfcCardId: '04-F9-C3-B4-2E-5A-80',
     attendance: 98,
     grades: [
       { subject: 'Aljabar II', assignment: 'Ujian Tengah Semester', grade: 94 },
@@ -45,6 +47,7 @@ export let students: Student[] = [
     email: 'noah.williams@example.com',
     class: 'Kelas 11',
     avatar: 'student-3',
+    nfcCardId: '04-12-34-56-78-9A-BC',
     attendance: 82,
     grades: [
       { subject: 'Kimia', assignment: 'Proyek Akhir', grade: 76 },
@@ -60,6 +63,7 @@ export let students: Student[] = [
     email: 'emma.brown@example.com',
     class: 'Kelas 11',
     avatar: 'student-4',
+    nfcCardId: '04-DE-F0-12-34-56-78',
     attendance: 99,
     grades: [
       { subject: 'Kimia', assignment: 'Proyek Akhir', grade: 95 },
@@ -75,6 +79,7 @@ export let students: Student[] = [
     email: 'james.jones@example.com',
     class: 'Kelas 10',
     avatar: 'student-5',
+    nfcCardId: '04-98-76-54-32-10-FE',
     attendance: 91,
     grades: [
       { subject: 'Aljabar II', assignment: 'Ujian Tengah Semester', grade: 82 },
@@ -118,3 +123,7 @@ export let schedule: ScheduleEvent[] = [
   { time: '1:00 - 2:30', tuesday: { course: 'Biologi', teacher: 'Dr. Green' }, thursday: { course: 'Biologi', teacher: 'Dr. Green' } },
   { time: '2:00 - 3:00', monday: { course: 'Kimia', teacher: 'Ibu White' }, wednesday: { course: 'Kimia', teacher: 'Ibu White' }, friday: { course: 'Kimia', teacher: 'Ibu White' } },
 ];
+
+
+// In-memory store for attendance sessions
+export let attendanceSessions: AttendanceSession[] = [];
