@@ -53,6 +53,44 @@ export async function getAnnouncements(): Promise<Announcement[]> {
   );
 }
 
+export async function getAnnouncementById(id: string): Promise<Announcement | undefined> {
+  return Promise.resolve(announcements.find((a) => a.id === id));
+}
+
+export async function addAnnouncement(announcementData: Omit<Announcement, 'id' | 'date'>): Promise<Announcement> {
+  const newId = `A${String(announcements.length + 1).padStart(3, '0')}`;
+  const newAnnouncement: Announcement = {
+    ...announcementData,
+    id: newId,
+    date: new Date().toISOString().split('T')[0], // Set current date
+  };
+  announcements.push(newAnnouncement);
+  revalidatePath('/announcements');
+  return Promise.resolve(newAnnouncement);
+}
+
+export async function updateAnnouncement(id: string, announcementData: Partial<Omit<Announcement, 'id'>>): Promise<Announcement | undefined> {
+    const announcementIndex = announcements.findIndex((a) => a.id === id);
+    if (announcementIndex === -1) {
+        return Promise.resolve(undefined);
+    }
+    const updatedAnnouncement = { ...announcements[announcementIndex], ...announcementData };
+    announcements[announcementIndex] = updatedAnnouncement;
+    revalidatePath(`/announcements`);
+    revalidatePath(`/announcements/${id}`);
+    return Promise.resolve(updatedAnnouncement);
+}
+
+export async function deleteAnnouncement(id: string): Promise<void> {
+    const announcementIndex = announcements.findIndex((a) => a.id === id);
+    if (announcementIndex > -1) {
+        announcements.splice(announcementIndex, 1);
+    }
+    revalidatePath('/announcements');
+    return Promise.resolve();
+}
+
+
 export async function getSchedule(): Promise<ScheduleEvent[]> {
   return Promise.resolve(schedule.sort((a, b) => a.time.localeCompare(b.time)));
 }

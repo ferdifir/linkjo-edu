@@ -86,7 +86,7 @@ export let students: Student[] = [
   },
 ];
 
-export const announcements: Announcement[] = [
+export let announcements: Announcement[] = [
   {
     id: 'A001',
     title: 'Konferensi Orang Tua-Guru',
