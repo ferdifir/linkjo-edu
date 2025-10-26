@@ -1,4 +1,4 @@
-import { getStudents } from '@/lib/api';
+import { getGrades } from '@/lib/api';
 import {
   Card,
   CardContent,
@@ -16,26 +16,27 @@ import {
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { PlusCircle } from 'lucide-react';
+import { GradeActions } from './components/grade-actions';
 
 export default async function GradesPage() {
-  const students = await getStudents();
-
-  // Flatten the grades data
-  const allGrades = students.flatMap(student =>
-    student.grades.map(grade => ({
-      ...grade,
-      studentId: student.id,
-      studentName: student.name,
-      studentAvatar: student.avatar,
-    }))
-  ).sort((a, b) => a.studentName.localeCompare(b.studentName) || a.subject.localeCompare(b.subject));
-
+  const allGrades = await getGrades();
 
   return (
     <div className="space-y-8">
-      <h1 className="font-headline text-3xl font-bold tracking-tight">
-        Laporan Nilai
-      </h1>
+      <div className="flex items-center justify-between">
+        <h1 className="font-headline text-3xl font-bold tracking-tight">
+          Laporan Nilai
+        </h1>
+        <Button asChild>
+          <Link href="/grades/new">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Tambah Nilai
+          </Link>
+        </Button>
+      </div>
       <Card>
         <CardHeader>
           <CardTitle>Semua Nilai Siswa</CardTitle>
@@ -52,10 +53,11 @@ export default async function GradesPage() {
                   <TableHead>Mata Pelajaran</TableHead>
                   <TableHead>Tugas</TableHead>
                   <TableHead className="text-right">Nilai</TableHead>
+                  <TableHead className="w-[50px] text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {allGrades.map((grade, index) => {
+                {allGrades.map((grade) => {
                   const avatarData = PlaceHolderImages.find(
                     (img) => img.id === grade.studentAvatar
                   );
@@ -65,7 +67,7 @@ export default async function GradesPage() {
                     .join('');
 
                   return (
-                    <TableRow key={`${grade.studentId}-${grade.subject}-${grade.assignment}`}>
+                    <TableRow key={grade.id}>
                       <TableCell>
                          <div className="flex items-center gap-3">
                             <Avatar className="h-8 w-8">
@@ -82,6 +84,9 @@ export default async function GradesPage() {
                       <TableCell>{grade.subject}</TableCell>
                       <TableCell>{grade.assignment}</TableCell>
                       <TableCell className="text-right font-medium">{grade.grade}%</TableCell>
+                       <TableCell className="text-right">
+                         <GradeActions gradeId={grade.id} />
+                      </TableCell>
                     </TableRow>
                   );
                 })}

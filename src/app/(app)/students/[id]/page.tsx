@@ -18,11 +18,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import ReportGenerator from './components/report-generator';
-import { Mail, Phone, MapPin, Pencil } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
+import { Mail } from 'lucide-react';
 
 export default async function StudentProfilePage({
   params,
@@ -60,12 +57,6 @@ export default async function StudentProfilePage({
             </div>
           </div>
         </div>
-        <Button asChild variant="outline">
-          <Link href={`/students/${student.id}/edit`}>
-            <Pencil className="mr-2 h-4 w-4" />
-            Edit Siswa
-          </Link>
-        </Button>
       </div>
 
       <Tabs defaultValue="report">

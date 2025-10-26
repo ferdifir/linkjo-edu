@@ -1,7 +1,8 @@
 import { students, announcements, schedule, courses } from './mock-data';
-import type { Student, Announcement, ScheduleEvent } from './types';
+import type { Student, Announcement, ScheduleEvent, Grade, Course } from './types';
 import { revalidatePath } from 'next/cache';
 
+// --- Students ---
 export async function getStudents(): Promise<Student[]> {
   return Promise.resolve(students);
 }
@@ -16,8 +17,8 @@ export async function addStudent(studentData: Omit<Student, 'id' | 'grades' | 'c
     ...studentData,
     id: newId,
     avatar: `student-${(students.length % 5) + 1}`,
-    grades: [], // Start with empty grades
-    courses: [], // Start with empty courses
+    grades: [],
+    courses: [],
   };
   students.push(newStudent);
   revalidatePath('/students');
@@ -46,8 +47,8 @@ export async function deleteStudent(id: string): Promise<void> {
 }
 
 
+// --- Announcements ---
 export async function getAnnouncements(): Promise<Announcement[]> {
-  // Sort by date descending
   return Promise.resolve(
     announcements.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
   );
@@ -62,7 +63,7 @@ export async function addAnnouncement(announcementData: Omit<Announcement, 'id' 
   const newAnnouncement: Announcement = {
     ...announcementData,
     id: newId,
-    date: new Date().toISOString().split('T')[0], // Set current date
+    date: new Date().toISOString().split('T')[0],
   };
   announcements.push(newAnnouncement);
   revalidatePath('/announcements');
@@ -77,7 +78,6 @@ export async function updateAnnouncement(id: string, announcementData: Partial<O
     const updatedAnnouncement = { ...announcements[announcementIndex], ...announcementData };
     announcements[announcementIndex] = updatedAnnouncement;
     revalidatePath(`/announcements`);
-    revalidatePath(`/announcements/${id}`);
     return Promise.resolve(updatedAnnouncement);
 }
 
@@ -90,7 +90,7 @@ export async function deleteAnnouncement(id: string): Promise<void> {
     return Promise.resolve();
 }
 
-
+// --- Schedule ---
 export async function getSchedule(): Promise<ScheduleEvent[]> {
   return Promise.resolve(schedule.sort((a, b) => a.time.localeCompare(b.time)));
 }
@@ -100,7 +100,6 @@ export async function getScheduleByTime(time: string): Promise<ScheduleEvent | u
 }
 
 export async function addSchedule(event: ScheduleEvent): Promise<ScheduleEvent> {
-  // check if time already exists
   const existingEvent = schedule.find(e => e.time === event.time);
   if (existingEvent) {
     throw new Error("Waktu yang sama sudah ada di jadwal.");
@@ -129,6 +128,7 @@ export async function deleteSchedule(time: string): Promise<void> {
     return Promise.resolve();
 }
 
+// --- Stats & Courses ---
 export async function getStats() {
     return Promise.resolve({
         totalStudents: students.length,
@@ -137,6 +137,91 @@ export async function getStats() {
     });
 }
 
-export async function getCourses() {
+export async function getCourses(): Promise<Course[]> {
     return Promise.resolve(courses);
+}
+
+// --- Grades ---
+export type GradeWithId = Grade & { id: string, studentId: string, studentName: string, studentAvatar: string };
+
+export async function getGrades(): Promise<GradeWithId[]> {
+  const allGrades = students.flatMap((student, studentIndex) =>
+    student.grades.map((grade, gradeIndex) => ({
+      ...grade,
+      id: `${student.id}-g${gradeIndex}`,
+      studentId: student.id,
+      studentName: student.name,
+      studentAvatar: student.avatar,
+    }))
+  ).sort((a, b) => a.studentName.localeCompare(b.studentName) || a.subject.localeCompare(b.subject));
+  return Promise.resolve(allGrades);
+}
+
+export async function getGradeById(gradeId: string): Promise<GradeWithId | undefined> {
+    const allGrades = await getGrades();
+    return Promise.resolve(allGrades.find(g => g.id === gradeId));
+}
+
+type GradeInput = { studentId: string, subject: string, assignment: string, grade: number };
+
+export async function addGrade(gradeData: GradeInput): Promise<Grade> {
+    const student = students.find(s => s.id === gradeData.studentId);
+    if (!student) {
+        throw new Error("Siswa tidak ditemukan.");
+    }
+    const newGrade = { subject: gradeData.subject, assignment: gradeData.assignment, grade: gradeData.grade };
+    student.grades.push(newGrade);
+    revalidatePath('/grades');
+    revalidatePath(`/students/${gradeData.studentId}`);
+    return Promise.resolve(newGrade);
+}
+
+export async function updateGrade(gradeId: string, gradeData: GradeInput): Promise<Grade> {
+    const student = students.find(s => s.id === gradeData.studentId);
+    if (!student) {
+        throw new Error("Siswa tidak ditemukan.");
+    }
+    
+    const [studentId, gradeIndexStr] = gradeId.split('-g');
+    const gradeIndex = parseInt(gradeIndexStr, 10);
+    
+    const originalStudent = students.find(s => s.id === studentId);
+    if (!originalStudent || !originalStudent.grades[gradeIndex]) {
+        throw new Error("Nilai asli tidak ditemukan.");
+    }
+
+    // If student changed, remove from old and add to new
+    if (originalStudent.id !== student.id) {
+        originalStudent.grades.splice(gradeIndex, 1);
+        const newGrade = { subject: gradeData.subject, assignment: gradeData.assignment, grade: gradeData.grade };
+        student.grades.push(newGrade);
+        revalidatePath(`/students/${originalStudent.id}`);
+    } else {
+        const updatedGrade = {
+            ...student.grades[gradeIndex],
+            subject: gradeData.subject,
+            assignment: gradeData.assignment,
+            grade: gradeData.grade
+        };
+        student.grades[gradeIndex] = updatedGrade;
+    }
+
+    revalidatePath('/grades');
+    revalidatePath(`/students/${gradeData.studentId}`);
+    return Promise.resolve(gradeData);
+}
+
+export async function deleteGrade(gradeId: string): Promise<void> {
+    const [studentId, gradeIndexStr] = gradeId.split('-g');
+    const gradeIndex = parseInt(gradeIndexStr, 10);
+    const student = students.find(s => s.id === studentId);
+
+    if (student && student.grades[gradeIndex]) {
+        student.grades.splice(gradeIndex, 1);
+        revalidatePath('/grades');
+        revalidatePath(`/students/${studentId}`);
+    } else {
+        throw new Error("Nilai tidak ditemukan.");
+    }
+    return Promise.resolve();
 }
