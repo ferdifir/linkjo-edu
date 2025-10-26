@@ -18,7 +18,7 @@ export interface AuthUser {
 }
 
 export async function authenticateUser(credentials: LoginCredentials): Promise<AuthUser | null> {
- const user = await prisma.user.findUnique({
+  const user = await prisma.user.findUnique({
     where: { email: credentials.email }
   });
 
@@ -32,11 +32,11 @@ export async function authenticateUser(credentials: LoginCredentials): Promise<A
     return null; // Invalid password
   }
 
-  return {
+ return {
     id: user.id,
     name: user.name,
     email: user.email,
-    role: user.role
+    role: user.role.toString() // Konversi enum ke string untuk memastikan kompatibilitas
   };
 }
 
