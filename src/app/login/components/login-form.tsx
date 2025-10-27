@@ -40,8 +40,8 @@ export default function LoginForm() {
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginFormSchema),
     defaultValues: {
-      email: 'teacher@linkjo.com',
-      password: 'password',
+      email: 'admin@sekolah.edu',
+      password: 'admin123',
     },
   });
 

@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import type { Student, Announcement, ScheduleEvent, Grade, Course, AttendanceSession, StudentAttendance } from './types';
+import type { Student, Announcement, ScheduleEvent, Grade, Course, AttendanceSession, StudentAttendance, SchoolLocation } from './types';
 import { compare } from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -281,223 +281,359 @@ export async function deleteAnnouncement(id: string): Promise<void> {
 // --- Schedule ---
 export async function getSchedule(): Promise<ScheduleEvent[]> {
   const dbSchedules = await prisma.schedule.findMany({
+    include: {
+      course: true
+    },
     orderBy: { time: 'asc' }
   });
 
-  const scheduleEvents: ScheduleEvent[] = [];
+  // Group schedules by time
+ const groupedSchedules: { [time: string]: ScheduleEvent } = {};
 
   for (const dbSchedule of dbSchedules) {
-    const scheduleEvent: ScheduleEvent = {
-      time: dbSchedule.time
-    };
-
-    if (dbSchedule.mondayCourseId) {
-      const course = await prisma.course.findUnique({
-        where: { id: dbSchedule.mondayCourseId }
-      });
-      if (course) {
-        scheduleEvent.monday = {
-          course: course.name,
-          teacher: course.teacher
-        };
-      }
+    if (!groupedSchedules[dbSchedule.time]) {
+      groupedSchedules[dbSchedule.time] = {
+        time: dbSchedule.time
+      };
     }
 
-    if (dbSchedule.tuesdayCourseId) {
-      const course = await prisma.course.findUnique({
-        where: { id: dbSchedule.tuesdayCourseId }
-      });
-      if (course) {
-        scheduleEvent.tuesday = {
-          course: course.name,
-          teacher: course.teacher
+    // Map day of week to the appropriate schedule property
+    switch (dbSchedule.dayOfWeek) {
+      case 'MONDAY':
+        groupedSchedules[dbSchedule.time].monday = {
+          course: dbSchedule.course.name,
+          teacher: dbSchedule.teacherName
         };
-      }
-    }
-
-    if (dbSchedule.wednesdayCourseId) {
-      const course = await prisma.course.findUnique({
-        where: { id: dbSchedule.wednesdayCourseId }
-      });
-      if (course) {
-        scheduleEvent.wednesday = {
-          course: course.name,
-          teacher: course.teacher
+        break;
+      case 'TUESDAY':
+        groupedSchedules[dbSchedule.time].tuesday = {
+          course: dbSchedule.course.name,
+          teacher: dbSchedule.teacherName
         };
-      }
-    }
-
-    if (dbSchedule.thursdayCourseId) {
-      const course = await prisma.course.findUnique({
-        where: { id: dbSchedule.thursdayCourseId }
-      });
-      if (course) {
-        scheduleEvent.thursday = {
-          course: course.name,
-          teacher: course.teacher
+        break;
+      case 'WEDNESDAY':
+        groupedSchedules[dbSchedule.time].wednesday = {
+          course: dbSchedule.course.name,
+          teacher: dbSchedule.teacherName
         };
-      }
-    }
-
-    if (dbSchedule.fridayCourseId) {
-      const course = await prisma.course.findUnique({
-        where: { id: dbSchedule.fridayCourseId }
-      });
-      if (course) {
-        scheduleEvent.friday = {
-          course: course.name,
-          teacher: course.teacher
+        break;
+      case 'THURSDAY':
+        groupedSchedules[dbSchedule.time].thursday = {
+          course: dbSchedule.course.name,
+          teacher: dbSchedule.teacherName
         };
-      }
+        break;
+      case 'FRIDAY':
+        groupedSchedules[dbSchedule.time].friday = {
+          course: dbSchedule.course.name,
+          teacher: dbSchedule.teacherName
+        };
+        break;
+      case 'SATURDAY':
+        groupedSchedules[dbSchedule.time].saturday = {
+          course: dbSchedule.course.name,
+          teacher: dbSchedule.teacherName
+        };
+        break;
     }
+ }
 
-    scheduleEvents.push(scheduleEvent);
-  }
-
-  return scheduleEvents;
+  return Object.values(groupedSchedules);
 }
 
 export async function getScheduleByTime(time: string): Promise<ScheduleEvent | undefined> {
-  const dbSchedule = await prisma.schedule.findFirst({
-    where: { time }
+  const dbSchedules = await prisma.schedule.findMany({
+    where: { time },
+    include: {
+      course: true
+    }
   });
 
-  if (!dbSchedule) {
+  if (dbSchedules.length === 0) {
     return undefined;
   }
 
   const scheduleEvent: ScheduleEvent = {
-    time: dbSchedule.time
+    time: dbSchedules[0].time
   };
 
-  if (dbSchedule.mondayCourseId) {
-    const course = await prisma.course.findUnique({
-      where: { id: dbSchedule.mondayCourseId }
-    });
-    if (course) {
-      scheduleEvent.monday = {
-        course: course.name,
-        teacher: course.teacher
-      };
-    }
- }
-
-  if (dbSchedule.tuesdayCourseId) {
-    const course = await prisma.course.findUnique({
-      where: { id: dbSchedule.tuesdayCourseId }
-    });
-    if (course) {
-      scheduleEvent.tuesday = {
-        course: course.name,
-        teacher: course.teacher
-      };
-    }
-  }
-
-  if (dbSchedule.wednesdayCourseId) {
-    const course = await prisma.course.findUnique({
-      where: { id: dbSchedule.wednesdayCourseId }
-    });
-    if (course) {
-      scheduleEvent.wednesday = {
-        course: course.name,
-        teacher: course.teacher
-      };
-    }
-  }
-
-  if (dbSchedule.thursdayCourseId) {
-    const course = await prisma.course.findUnique({
-      where: { id: dbSchedule.thursdayCourseId }
-    });
-    if (course) {
-      scheduleEvent.thursday = {
-        course: course.name,
-        teacher: course.teacher
-      };
+ // Map each day of week from the database schedules
+  for (const dbSchedule of dbSchedules) {
+    switch (dbSchedule.dayOfWeek) {
+      case 'MONDAY':
+        scheduleEvent.monday = {
+          course: dbSchedule.course.name,
+          teacher: dbSchedule.teacherName
+        };
+        break;
+      case 'TUESDAY':
+        scheduleEvent.tuesday = {
+          course: dbSchedule.course.name,
+          teacher: dbSchedule.teacherName
+        };
+        break;
+      case 'WEDNESDAY':
+        scheduleEvent.wednesday = {
+          course: dbSchedule.course.name,
+          teacher: dbSchedule.teacherName
+        };
+        break;
+      case 'THURSDAY':
+        scheduleEvent.thursday = {
+          course: dbSchedule.course.name,
+          teacher: dbSchedule.teacherName
+        };
+        break;
+      case 'FRIDAY':
+        scheduleEvent.friday = {
+          course: dbSchedule.course.name,
+          teacher: dbSchedule.teacherName
+        };
+        break;
+      case 'SATURDAY':
+        scheduleEvent.saturday = {
+          course: dbSchedule.course.name,
+          teacher: dbSchedule.teacherName
+        };
+        break;
     }
   }
 
-  if (dbSchedule.fridayCourseId) {
-    const course = await prisma.course.findUnique({
-      where: { id: dbSchedule.fridayCourseId }
-    });
-    if (course) {
-      scheduleEvent.friday = {
-        course: course.name,
-        teacher: course.teacher
-      };
-    }
-  }
-
-  return scheduleEvent;
+ return scheduleEvent;
 }
 
 export async function addSchedule(event: ScheduleEvent): Promise<ScheduleEvent> {
-  const existingEvent = await prisma.schedule.findFirst({
-    where: { time: event.time }
-  });
-  if (existingEvent) {
-    throw new Error("Waktu yang sama sudah ada di jadwal.");
+  // The ScheduleEvent interface still represents the old structure
+  // We need to create multiple schedule entries for each day that has a class
+  const createdSchedules = [];
+
+  if (event.monday) {
+    const course = await prisma.course.findFirst({ where: { name: event.monday.course } });
+    if (course) {
+      const schedule = await prisma.schedule.create({
+        data: {
+          time: event.time,
+          dayOfWeek: 'MONDAY',
+          courseId: course.id,
+          teacherName: event.monday.teacher,
+          class: 'Kelas Umum', // Default class, could be customized
+          academicYearId: 'ACY001', // Default academic year, could be passed as parameter
+          semesterId: 'SEM001', // Default semester, could be passed as parameter
+        }
+      });
+      createdSchedules.push(schedule);
+    }
   }
 
-  await prisma.schedule.create({
-    data: {
-      time: event.time,
-      mondayCourseId: event.monday ? (await prisma.course.findFirst({ where: { name: event.monday.course } }))?.id : null,
-      mondayTeacher: event.monday?.teacher || null,
-      tuesdayCourseId: event.tuesday ? (await prisma.course.findFirst({ where: { name: event.tuesday.course } }))?.id : null,
-      tuesdayTeacher: event.tuesday?.teacher || null,
-      wednesdayCourseId: event.wednesday ? (await prisma.course.findFirst({ where: { name: event.wednesday.course } }))?.id : null,
-      wednesdayTeacher: event.wednesday?.teacher || null,
-      thursdayCourseId: event.thursday ? (await prisma.course.findFirst({ where: { name: event.thursday.course } }))?.id : null,
-      thursdayTeacher: event.thursday?.teacher || null,
-      fridayCourseId: event.friday ? (await prisma.course.findFirst({ where: { name: event.friday.course } }))?.id : null,
-      fridayTeacher: event.friday?.teacher || null,
+  if (event.tuesday) {
+    const course = await prisma.course.findFirst({ where: { name: event.tuesday.course } });
+    if (course) {
+      const schedule = await prisma.schedule.create({
+        data: {
+          time: event.time,
+          dayOfWeek: 'TUESDAY',
+          courseId: course.id,
+          teacherName: event.tuesday.teacher,
+          class: 'Kelas Umum',
+          academicYearId: 'ACY001',
+          semesterId: 'SEM001',
+        }
+      });
+      createdSchedules.push(schedule);
     }
- });
+ }
+
+  if (event.wednesday) {
+    const course = await prisma.course.findFirst({ where: { name: event.wednesday.course } });
+    if (course) {
+      const schedule = await prisma.schedule.create({
+        data: {
+          time: event.time,
+          dayOfWeek: 'WEDNESDAY',
+          courseId: course.id,
+          teacherName: event.wednesday.teacher,
+          class: 'Kelas Umum',
+          academicYearId: 'ACY001',
+          semesterId: 'SEM001',
+        }
+      });
+      createdSchedules.push(schedule);
+    }
+ }
+
+  if (event.thursday) {
+    const course = await prisma.course.findFirst({ where: { name: event.thursday.course } });
+    if (course) {
+      const schedule = await prisma.schedule.create({
+        data: {
+          time: event.time,
+          dayOfWeek: 'THURSDAY',
+          courseId: course.id,
+          teacherName: event.thursday.teacher,
+          class: 'Kelas Umum',
+          academicYearId: 'ACY001',
+          semesterId: 'SEM001',
+        }
+      });
+      createdSchedules.push(schedule);
+    }
+  }
+
+  if (event.friday) {
+    const course = await prisma.course.findFirst({ where: { name: event.friday.course } });
+    if (course) {
+      const schedule = await prisma.schedule.create({
+        data: {
+          time: event.time,
+          dayOfWeek: 'FRIDAY',
+          courseId: course.id,
+          teacherName: event.friday.teacher,
+          class: 'Kelas Umum',
+          academicYearId: 'ACY001',
+          semesterId: 'SEM001',
+        }
+      });
+      createdSchedules.push(schedule);
+    }
+ }
+
+  if (event.saturday) {
+    const course = await prisma.course.findFirst({ where: { name: event.saturday.course } });
+    if (course) {
+      const schedule = await prisma.schedule.create({
+        data: {
+          time: event.time,
+          dayOfWeek: 'SATURDAY',
+          courseId: course.id,
+          teacherName: event.saturday.teacher,
+          class: 'Kelas Umum',
+          academicYearId: 'ACY001',
+          semesterId: 'SEM001',
+        }
+      });
+      createdSchedules.push(schedule);
+    }
+ }
 
   return event;
 }
 
 export async function updateSchedule(time: string, event: ScheduleEvent): Promise<ScheduleEvent> {
-  const dbSchedule = await prisma.schedule.findFirst({
+  // First, delete all existing schedules for this time
+  await prisma.schedule.deleteMany({
     where: { time }
   });
 
-  if (!dbSchedule) {
-    throw new Error("Jadwal tidak ditemukan.");
+  // Then add the new schedule using the same logic as addSchedule
+ if (event.monday) {
+    const course = await prisma.course.findFirst({ where: { name: event.monday.course } });
+    if (course) {
+      await prisma.schedule.create({
+        data: {
+          time: event.time,
+          dayOfWeek: 'MONDAY',
+          courseId: course.id,
+          teacherName: event.monday.teacher,
+          class: 'Kelas Umum',
+          academicYearId: 'ACY001',
+          semesterId: 'SEM001',
+        }
+      });
+    }
   }
 
-  const updatedSchedule = await prisma.schedule.update({
-    where: { id: dbSchedule.id },
-    data: {
-      mondayCourseId: event.monday ? (await prisma.course.findFirst({ where: { name: event.monday.course } }))?.id : null,
-      mondayTeacher: event.monday?.teacher || null,
-      tuesdayCourseId: event.tuesday ? (await prisma.course.findFirst({ where: { name: event.tuesday.course } }))?.id : null,
-      tuesdayTeacher: event.tuesday?.teacher || null,
-      wednesdayCourseId: event.wednesday ? (await prisma.course.findFirst({ where: { name: event.wednesday.course } }))?.id : null,
-      wednesdayTeacher: event.wednesday?.teacher || null,
-      thursdayCourseId: event.thursday ? (await prisma.course.findFirst({ where: { name: event.thursday.course } }))?.id : null,
-      thursdayTeacher: event.thursday?.teacher || null,
-      fridayCourseId: event.friday ? (await prisma.course.findFirst({ where: { name: event.friday.course } }))?.id : null,
-      fridayTeacher: event.friday?.teacher || null,
+  if (event.tuesday) {
+    const course = await prisma.course.findFirst({ where: { name: event.tuesday.course } });
+    if (course) {
+      await prisma.schedule.create({
+        data: {
+          time: event.time,
+          dayOfWeek: 'TUESDAY',
+          courseId: course.id,
+          teacherName: event.tuesday.teacher,
+          class: 'Kelas Umum',
+          academicYearId: 'ACY001',
+          semesterId: 'SEM001',
+        }
+      });
     }
-  });
+  }
+
+ if (event.wednesday) {
+    const course = await prisma.course.findFirst({ where: { name: event.wednesday.course } });
+    if (course) {
+      await prisma.schedule.create({
+        data: {
+          time: event.time,
+          dayOfWeek: 'WEDNESDAY',
+          courseId: course.id,
+          teacherName: event.wednesday.teacher,
+          class: 'Kelas Umum',
+          academicYearId: 'ACY001',
+          semesterId: 'SEM001',
+        }
+      });
+    }
+  }
+
+ if (event.thursday) {
+    const course = await prisma.course.findFirst({ where: { name: event.thursday.course } });
+    if (course) {
+      await prisma.schedule.create({
+        data: {
+          time: event.time,
+          dayOfWeek: 'THURSDAY',
+          courseId: course.id,
+          teacherName: event.thursday.teacher,
+          class: 'Kelas Umum',
+          academicYearId: 'ACY001',
+          semesterId: 'SEM001',
+        }
+      });
+    }
+  }
+
+  if (event.friday) {
+    const course = await prisma.course.findFirst({ where: { name: event.friday.course } });
+    if (course) {
+      await prisma.schedule.create({
+        data: {
+          time: event.time,
+          dayOfWeek: 'FRIDAY',
+          courseId: course.id,
+          teacherName: event.friday.teacher,
+          class: 'Kelas Umum',
+          academicYearId: 'ACY001',
+          semesterId: 'SEM001',
+        }
+      });
+    }
+  }
+
+  if (event.saturday) {
+    const course = await prisma.course.findFirst({ where: { name: event.saturday.course } });
+    if (course) {
+      await prisma.schedule.create({
+        data: {
+          time: event.time,
+          dayOfWeek: 'SATURDAY',
+          courseId: course.id,
+          teacherName: event.saturday.teacher,
+          class: 'Kelas Umum',
+          academicYearId: 'ACY001',
+          semesterId: 'SEM001',
+        }
+      });
+    }
+  }
 
   return event;
 }
 
 export async function deleteSchedule(time: string): Promise<void> {
-  const dbSchedule = await prisma.schedule.findFirst({
+  await prisma.schedule.deleteMany({
     where: { time }
   });
-
- if (dbSchedule) {
-    await prisma.schedule.delete({
-      where: { id: dbSchedule.id }
-    });
-  }
 }
 
 // --- Stats & Courses ---
@@ -631,6 +767,320 @@ export async function updateGrade(gradeId: string, gradeData: GradeInput): Promi
 export async function deleteGrade(gradeId: string): Promise<void> {
   await prisma.grade.delete({
     where: { id: gradeId }
+  });
+}
+
+// --- Courses Management (Admin Only) ---
+
+export async function getCoursesForAdmin(): Promise<Course[]> {
+  const dbCourses = await prisma.course.findMany({
+    orderBy: { name: 'asc' }
+  });
+
+  return dbCourses.map(c => ({
+    id: c.id,
+    name: c.name,
+    teacher: c.teacher,
+    schedule: c.schedule || ''
+  }));
+}
+
+export async function getCourseByIdForAdmin(courseId: string): Promise<Course | undefined> {
+  const dbCourse = await prisma.course.findUnique({
+    where: { id: courseId }
+  });
+
+  if (!dbCourse) {
+    return undefined;
+  }
+
+  return {
+    id: dbCourse.id,
+    name: dbCourse.name,
+    teacher: dbCourse.teacher,
+    schedule: dbCourse.schedule || ''
+  };
+}
+
+export async function addCourse(courseData: Omit<Course, 'id'>): Promise<Course> {
+  // Generate a new ID for the course
+  const newId = `C${Date.now()}`;
+  
+  const newCourse = await prisma.course.create({
+    data: {
+      id: newId,
+      name: courseData.name,
+      teacher: courseData.teacher,
+      schedule: courseData.schedule
+    }
+  });
+
+  return {
+    id: newCourse.id,
+    name: newCourse.name,
+    teacher: newCourse.teacher,
+    schedule: newCourse.schedule || ''
+  };
+}
+
+export async function updateCourse(courseId: string, courseData: Partial<Omit<Course, 'id'>>): Promise<Course | undefined> {
+  const updatedCourse = await prisma.course.update({
+    where: { id: courseId },
+    data: {
+      name: courseData.name,
+      teacher: courseData.teacher,
+      schedule: courseData.schedule
+    }
+  });
+
+  if (!updatedCourse) {
+    return undefined;
+  }
+
+  return {
+    id: updatedCourse.id,
+    name: updatedCourse.name,
+    teacher: updatedCourse.teacher,
+    schedule: updatedCourse.schedule || ''
+  };
+}
+
+export async function deleteCourse(courseId: string): Promise<void> {
+  // First, delete related records to avoid foreign key constraints
+  await prisma.studentEnrollment.deleteMany({
+    where: { courseId }
+  });
+  
+  await prisma.grade.deleteMany({
+    where: { courseId }
+  });
+  
+  await prisma.schedule.deleteMany({
+    where: { courseId }
+  });
+  
+  await prisma.attendanceSession.deleteMany({
+    where: { courseId }
+  });
+
+  // Then delete the course
+  await prisma.course.delete({
+    where: { id: courseId }
+  });
+}
+
+// --- Location Management (Admin Only) ---
+
+export async function getLocations(): Promise<SchoolLocation[]> {
+  const dbLocations = await prisma.location.findMany({
+    orderBy: { name: 'asc' }
+  });
+
+  return dbLocations.map(l => ({
+    id: l.id,
+    name: l.name,
+    description: l.description || undefined
+  }));
+}
+
+export async function getLocationById(locationId: string): Promise<SchoolLocation | undefined> {
+  const dbLocation = await prisma.location.findUnique({
+    where: { id: locationId }
+  });
+
+  if (!dbLocation) {
+    return undefined;
+  }
+
+  return {
+    id: dbLocation.id,
+    name: dbLocation.name,
+    description: dbLocation.description || undefined
+  };
+}
+
+export async function addLocation(locationData: Omit<SchoolLocation, 'id'>): Promise<SchoolLocation> {
+  // Generate a new ID for the location
+  const newId = `LOC${Date.now()}`;
+  
+  const newLocation = await prisma.location.create({
+    data: {
+      id: newId,
+      name: locationData.name,
+      description: locationData.description
+    }
+  });
+
+  return {
+    id: newLocation.id,
+    name: newLocation.name,
+    description: newLocation.description || undefined
+  };
+}
+
+export async function updateLocation(locationId: string, locationData: Partial<Omit<SchoolLocation, 'id'>>): Promise<SchoolLocation | undefined> {
+  const updatedLocation = await prisma.location.update({
+    where: { id: locationId },
+    data: {
+      name: locationData.name,
+      description: locationData.description
+    }
+  });
+
+  if (!updatedLocation) {
+    return undefined;
+  }
+
+  return {
+    id: updatedLocation.id,
+    name: updatedLocation.name,
+    description: updatedLocation.description || undefined
+  };
+}
+
+export async function deleteLocation(locationId: string): Promise<void> {
+  // First, delete all classrooms in this location
+  const classrooms = await prisma.classroom.findMany({
+    where: { locationId }
+  });
+  
+  for (const classroom of classrooms) {
+    // Delete schedules that use this classroom
+    await prisma.schedule.deleteMany({
+      where: { classroomId: classroom.id }
+    });
+  }
+  
+  // Delete all classrooms in this location
+  await prisma.classroom.deleteMany({
+    where: { locationId }
+  });
+
+  // Then delete the location
+  await prisma.location.delete({
+    where: { id: locationId }
+  });
+}
+
+// --- Classroom Management (Admin Only) ---
+
+export async function getClassrooms(): Promise<Classroom[]> {
+  const dbClassrooms = await prisma.classroom.findMany({
+    include: {
+      location: true
+    },
+    orderBy: { name: 'asc' }
+  });
+
+  return dbClassrooms.map(c => ({
+    id: c.id,
+    name: c.name,
+    code: c.code,
+    locationId: c.locationId,
+    locationName: c.location.name,
+    capacity: c.capacity,
+    description: c.description || undefined,
+    isActive: c.isActive
+  }));
+}
+
+export async function getClassroomById(classroomId: string): Promise<Classroom | undefined> {
+  const dbClassroom = await prisma.classroom.findUnique({
+    where: { id: classroomId },
+    include: {
+      location: true
+    }
+  });
+
+  if (!dbClassroom) {
+    return undefined;
+  }
+
+  return {
+    id: dbClassroom.id,
+    name: dbClassroom.name,
+    code: dbClassroom.code,
+    locationId: dbClassroom.locationId,
+    locationName: dbClassroom.location.name,
+    capacity: dbClassroom.capacity,
+    description: dbClassroom.description || undefined,
+    isActive: dbClassroom.isActive
+  };
+}
+
+export async function addClassroom(classroomData: Omit<Classroom, 'id' | 'locationName'>): Promise<Classroom> {
+  // Generate a new ID for the classroom
+  const newId = `CLS${Date.now()}`;
+  
+  const newClassroom = await prisma.classroom.create({
+    data: {
+      id: newId,
+      name: classroomData.name,
+      code: classroomData.code,
+      locationId: classroomData.locationId,
+      capacity: classroomData.capacity,
+      description: classroomData.description,
+      isActive: classroomData.isActive
+    },
+    include: {
+      location: true
+    }
+  });
+
+  return {
+    id: newClassroom.id,
+    name: newClassroom.name,
+    code: newClassroom.code,
+    locationId: newClassroom.locationId,
+    locationName: newClassroom.location.name,
+    capacity: newClassroom.capacity,
+    description: newClassroom.description || undefined,
+    isActive: newClassroom.isActive
+  };
+}
+
+export async function updateClassroom(classroomId: string, classroomData: Partial<Omit<Classroom, 'id' | 'locationName'>>): Promise<Classroom | undefined> {
+  const updatedClassroom = await prisma.classroom.update({
+    where: { id: classroomId },
+    data: {
+      name: classroomData.name,
+      code: classroomData.code,
+      locationId: classroomData.locationId,
+      capacity: classroomData.capacity,
+      description: classroomData.description,
+      isActive: classroomData.isActive
+    },
+    include: {
+      location: true
+    }
+  });
+
+  if (!updatedClassroom) {
+    return undefined;
+  }
+
+  return {
+    id: updatedClassroom.id,
+    name: updatedClassroom.name,
+    code: updatedClassroom.code,
+    locationId: updatedClassroom.locationId,
+    locationName: updatedClassroom.location.name,
+    capacity: updatedClassroom.capacity,
+    description: updatedClassroom.description || undefined,
+    isActive: updatedClassroom.isActive
+  };
+}
+
+export async function deleteClassroom(classroomId: string): Promise<void> {
+  // First, remove this classroom from any schedules that use it
+  await prisma.schedule.updateMany({
+    where: { classroomId },
+    data: { classroomId: null }
+  });
+
+  // Then delete the classroom
+  await prisma.classroom.delete({
+    where: { id: classroomId }
   });
 }
 

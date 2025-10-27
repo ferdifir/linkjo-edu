@@ -10,6 +10,8 @@ import {
   Megaphone,
   FileText,
   CheckSquare,
+  BookOpen,
+  MapPin,
   LogOut,
 } from 'lucide-react';
 import {
@@ -21,6 +23,7 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import { logoutAction } from '@/app/login/actions';
+import { useEffect, useState } from 'react';
 
 const menuItems = [
   { href: '/dashboard', label: 'Dasbor', icon: LayoutDashboard },
@@ -31,8 +34,37 @@ const menuItems = [
   { href: '/attendance', label: 'Kehadiran', icon: CheckSquare },
 ];
 
+const adminMenuItems = [
+  { href: '/courses', label: 'Mata Pelajaran', icon: BookOpen },
+  { href: '/locations', label: 'Lokasi & Ruang', icon: MapPin },
+];
+
 export function AppSidebar() {
   const pathname = usePathname();
+  const [isAdminUser, setIsAdminUser] = useState(false);
+
+  useEffect(() => {
+    // Check if user is admin
+    fetch('/api/user')
+      .then(res => {
+        if (res.ok) {
+          return res.json();
+        } else {
+          // If not authenticated, don't set admin status
+          return { role: null };
+        }
+      })
+      .then(data => {
+        if (data.role === 'ADMIN') {
+          setIsAdminUser(true);
+        }
+      })
+      .catch(error => {
+        console.error('Error checking admin status:', error);
+        // On error, assume not an admin
+        setIsAdminUser(false);
+      });
+  }, []);
 
   return (
     <>
@@ -58,6 +90,29 @@ export function AppSidebar() {
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
+          
+          {/* Admin-only menu items */}
+          {isAdminUser && (
+            <>
+              <SidebarMenuItem className="pt-4">
+                <span className="px-2 text-xs font-semibold text-muted-foreground uppercase">Admin</span>
+              </SidebarMenuItem>
+              {adminMenuItems.map((item) => (
+                <SidebarMenuItem key={item.href}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname.startsWith(item.href)}
+                    tooltip={{ children: item.label, side: 'right' }}
+                  >
+                    <Link href={item.href}>
+                      <item.icon />
+                      <span>{item.label}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </>
+          )}
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter>

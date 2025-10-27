@@ -16,7 +16,7 @@ export async function createSession(user: AuthUser): Promise<string> {
  // sistem session yang lebih aman
   const sessionData: SessionData = {
     user,
-    expiresAt: Date.now() + 24 * 60 * 60 * 1000, // 24 jam
+    expiresAt: Date.now() + 24 * 60 * 1000, // 24 jam
  };
 
   // Dalam contoh ini, kita hanya menyimpan data sebagai string JSON

@@ -38,6 +38,7 @@ export interface ScheduleEvent {
   wednesday?: { course: string; teacher: string };
   thursday?: { course: string; teacher: string };
   friday?: { course: string; teacher: string };
+  saturday?: { course: string; teacher: string };
 }
 
 // New types for the attendance feature
@@ -57,4 +58,22 @@ export interface AttendanceSession {
   isActive: boolean;
   startTime: string;
   endTime?: string;
+}
+
+// New types for location and classroom management
+export interface SchoolLocation {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+export interface Classroom {
+  id: string;
+  name: string;
+  code: string;
+  locationId: string;
+  locationName: string; // For display purposes
+  capacity: number;
+  description?: string;
+  isActive: boolean;
 }

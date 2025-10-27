@@ -226,32 +226,135 @@ async function main() {
     });
   }
 
-  // Data dummy untuk schedule
- const scheduleData = [
-    { time: '9:00 - 10:0', monday: { course: 'Aljabar II', teacher: 'Bpk. Davis' }, wednesday: { course: 'Aljabar II', teacher: 'Bpk. Davis' }, friday: { course: 'Aljabar II', teacher: 'Bpk. Davis' } },
-    { time: '10:00 - 11:30', tuesday: { course: 'Sejarah Dunia', teacher: 'Ibu Smith' }, thursday: { course: 'Sejarah Dunia', teacher: 'Ibu Smith' } },
-    { time: '11:00 - 12:00', monday: { course: 'Sastra Inggris', teacher: 'Bpk. Allen' }, wednesday: { course: 'Sastra Inggris', teacher: 'Bpk. Allen' }, friday: { course: 'Sastra Inggris', teacher: 'Bpk. Allen' } },
-    { time: '12:00 - 1:00', monday: { course: 'Makan Siang', teacher: ''}, tuesday: { course: 'Makan Siang', teacher: ''}, wednesday: { course: 'Makan Siang', teacher: ''}, thursday: { course: 'Makan Siang', teacher: ''}, friday: { course: 'Makan Siang', teacher: ''} },
-    { time: '1:00 - 2:30', tuesday: { course: 'Biologi', teacher: 'Dr. Green' }, thursday: { course: 'Biologi', teacher: 'Dr. Green' } },
-    { time: '2:00 - 3:00', monday: { course: 'Kimia', teacher: 'Ibu White' }, wednesday: { course: 'Kimia', teacher: 'Ibu White' }, friday: { course: 'Kimia', teacher: 'Ibu White' } },
-  ];
+  // Data dummy untuk Academic Year dan Semester - cek dulu apakah sudah ada
+  let academicYear = await prisma.academicYear.findUnique({
+    where: { id: 'ACY001' }
+  });
+
+  if (!academicYear) {
+    academicYear = await prisma.academicYear.create({
+      data: {
+        id: 'ACY001',
+        year: '2023/2024',
+        description: 'Tahun Ajaran 2023/2024',
+        isActive: true,
+      },
+    });
+  }
+
+  let semester = await prisma.semester.findUnique({
+    where: { id: 'SEM001' }
+  });
+
+  if (!semester) {
+    semester = await prisma.semester.create({
+      data: {
+        id: 'SEM001',
+        name: 'Ganjil',
+        startDate: new Date('2023-08-01'),
+        endDate: new Date('2024-01-31'),
+        academicYearId: academicYear.id,
+      },
+    });
+  }
+
+  // Data dummy untuk schedule - ubah struktur untuk menyesuaikan schema baru
+  const scheduleData = [
+    { time: '9:00 - 10:00', dayOfWeek: 'MONDAY' as const, course: 'Aljabar II', teacher: 'Bpk. Davis' },
+    { time: '9:00 - 10:00', dayOfWeek: 'WEDNESDAY' as const, course: 'Aljabar II', teacher: 'Bpk. Davis' },
+    { time: '9:00 - 10:00', dayOfWeek: 'FRIDAY' as const, course: 'Aljabar II', teacher: 'Bpk. Davis' },
+    { time: '10:00 - 11:30', dayOfWeek: 'TUESDAY' as const, course: 'Sejarah Dunia', teacher: 'Ibu Smith' },
+    { time: '10:00 - 11:30', dayOfWeek: 'THURSDAY' as const, course: 'Sejarah Dunia', teacher: 'Ibu Smith' },
+    { time: '1:00 - 12:00', dayOfWeek: 'MONDAY' as const, course: 'Sastra Inggris', teacher: 'Bpk. Allen' },
+    { time: '11:00 - 12:00', dayOfWeek: 'WEDNESDAY' as const, course: 'Sastra Inggris', teacher: 'Bpk. Allen' },
+    { time: '11:00 - 12:00', dayOfWeek: 'FRIDAY' as const, course: 'Sastra Inggris', teacher: 'Bpk. Allen' },
+    { time: '12:00 - 13:00', dayOfWeek: 'MONDAY' as const, course: 'Makan Siang', teacher: '' },
+    { time: '12:00 - 13:00', dayOfWeek: 'TUESDAY' as const, course: 'Makan Siang', teacher: '' },
+    { time: '12:00 - 13:00', dayOfWeek: 'WEDNESDAY' as const, course: 'Makan Siang', teacher: '' },
+    { time: '12:00 - 13:00', dayOfWeek: 'THURSDAY' as const, course: 'Makan Siang', teacher: '' },
+    { time: '12:00 - 13:00', dayOfWeek: 'FRIDAY' as const, course: 'Makan Siang', teacher: '' },
+    { time: '13:00 - 14:30', dayOfWeek: 'TUESDAY' as const, course: 'Biologi', teacher: 'Dr. Green' },
+    { time: '13:00 - 14:30', dayOfWeek: 'THURSDAY' as const, course: 'Biologi', teacher: 'Dr. Green' },
+    { time: '14:00 - 15:00', dayOfWeek: 'MONDAY' as const, course: 'Kimia', teacher: 'Ibu White' },
+    { time: '14:00 - 15:00', dayOfWeek: 'WEDNESDAY' as const, course: 'Kimia', teacher: 'Ibu White' },
+    { time: '14:00 - 15:00', dayOfWeek: 'FRIDAY' as const, course: 'Kimia', teacher: 'Ibu White' },
+ ];
 
   // Tambahkan schedule ke database
   for (const schedule of scheduleData) {
-    await prisma.schedule.create({
+    const courseId = coursesData.find(c => c.name === schedule.course)?.id;
+    
+    if (courseId) {
+      await prisma.schedule.create({
+        data: {
+          id: `SCH-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          time: schedule.time,
+          dayOfWeek: schedule.dayOfWeek,
+          courseId: courseId,
+          teacherName: schedule.teacher,
+          class: 'Kelas Umum', // Default class
+          academicYearId: academicYear.id,
+          semesterId: semester.id,
+        },
+      });
+    } else {
+      // Jika tidak ada course (misalnya 'Makan Siang'), buat schedule tanpa course
+      await prisma.schedule.create({
+        data: {
+          id: `SCH-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          time: schedule.time,
+          dayOfWeek: schedule.dayOfWeek,
+          courseId: coursesData[0].id, // Gunakan course pertama sebagai default
+          teacherName: schedule.teacher,
+          class: 'Kelas Umum',
+          academicYearId: academicYear.id,
+          semesterId: semester.id,
+        },
+      });
+    }
+ }
+
+  // Data dummy untuk Locations dan Classrooms
+  const locationsData = [
+    { id: 'LOC001', name: 'Gedung Utama', description: 'Gedung utama sekolah dengan fasilitas lengkap' },
+    { id: 'LOC002', name: 'Gedung Barat', description: 'Gedung barat yang digunakan untuk kelas-kelas tambahan' },
+    { id: 'LOC003', name: 'Laboratorium', description: 'Gedung yang berisi laboratorium sains dan komputer' },
+  ];
+
+  // Tambahkan locations ke database
+  for (const location of locationsData) {
+    await prisma.location.create({
       data: {
-        id: `SCH-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        time: schedule.time,
-        mondayCourseId: coursesData.find(c => c.name === schedule.monday?.course)?.id || null,
-        mondayTeacher: schedule.monday?.teacher || null,
-        tuesdayCourseId: coursesData.find(c => c.name === schedule.tuesday?.course)?.id || null,
-        tuesdayTeacher: schedule.tuesday?.teacher || null,
-        wednesdayCourseId: coursesData.find(c => c.name === schedule.wednesday?.course)?.id || null,
-        wednesdayTeacher: schedule.wednesday?.teacher || null,
-        thursdayCourseId: coursesData.find(c => c.name === schedule.thursday?.course)?.id || null,
-        thursdayTeacher: schedule.thursday?.teacher || null,
-        fridayCourseId: coursesData.find(c => c.name === schedule.friday?.course)?.id || null,
-        fridayTeacher: schedule.friday?.teacher || null,
+        id: location.id,
+        name: location.name,
+        description: location.description,
+      },
+    });
+  }
+
+  // Data dummy untuk Classrooms
+  const classroomsData = [
+    { id: 'CLS001', name: 'Kelas 101', code: 'KLS-101', locationId: 'LOC001', capacity: 30, description: 'Kelas reguler untuk siswa kelas 10' },
+    { id: 'CLS002', name: 'Kelas 102', code: 'KLS-102', locationId: 'LOC001', capacity: 30, description: 'Kelas reguler untuk siswa kelas 10' },
+    { id: 'CLS003', name: 'Kelas 103', code: 'KLS-103', locationId: 'LOC001', capacity: 30, description: 'Kelas reguler untuk siswa kelas 11' },
+    { id: 'CLS004', name: 'Kelas 104', code: 'KLS-104', locationId: 'LOC001', capacity: 30, description: 'Kelas reguler untuk siswa kelas 11' },
+    { id: 'CLS005', name: 'Kelas 105', code: 'KLS-105', locationId: 'LOC001', capacity: 30, description: 'Kelas reguler untuk siswa kelas 12' },
+    { id: 'CLS006', name: 'Laboratorium Komputer', code: 'LAB-COMP', locationId: 'LOC003', capacity: 20, description: 'Laboratorium komputer dengan 20 unit PC' },
+    { id: 'CLS007', name: 'Laboratorium Biologi', code: 'LAB-BIO', locationId: 'LOC003', capacity: 15, description: 'Laboratorium biologi dengan fasilitas lengkap' },
+    { id: 'CLS008', name: 'Laboratorium Kimia', code: 'LAB-CHEM', locationId: 'LOC003', capacity: 15, description: 'Laboratorium kimia dengan fasilitas lengkap' },
+  ];
+
+  // Tambahkan classrooms ke database
+  for (const classroom of classroomsData) {
+    await prisma.classroom.create({
+      data: {
+        id: classroom.id,
+        name: classroom.name,
+        code: classroom.code,
+        locationId: classroom.locationId,
+        capacity: classroom.capacity,
+        description: classroom.description,
+        isActive: true,
       },
     });
   }
