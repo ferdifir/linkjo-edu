@@ -5,9 +5,6 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   images: {
     remotePatterns: [
       {
@@ -29,6 +26,9 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
     ],
+  },
+  turbopack: {
+    root: '.', // Set root to current directory
   },
 };
 

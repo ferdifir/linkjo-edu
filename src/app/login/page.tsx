@@ -15,10 +15,16 @@ export default function LoginPage() {
             </p>
         </div>
         <LoginForm />
-        <div className="text-center text-sm text-gray-600 dark:text-gray-400 mt-4">
-          <p className="font-medium">Akun Demo:</p>
-          <p>Admin: admin@sekolah.edu / admin123</p>
-          <p>Guru: davis@sekolah.edu / teacher123</p>
+        <div className="text-center text-sm text-gray-600 dark:text-gray-400 mt-4 space-y-2">
+          <p className="font-medium">Akun Demo Tersedia:</p>
+          <div className="space-y-1 text-xs">
+            <p><span className="font-semibold">Admin:</span> admin@sekolah.edu / admin123</p>
+            <p><span className="font-semibold">Guru:</span> davis@sekolah.edu / teacher123</p>
+            <p><span className="font-semibold">Guru 2:</span> smith@sekolah.edu / teacher123</p>
+          </div>
+          <p className="text-xs mt-2 text-gray-50 dark:text-gray-400">
+            Catatan: Gunakan akun demo untuk mengakses sistem
+          </p>
         </div>
       </div>
     </div>
