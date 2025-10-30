@@ -1,41 +1,40 @@
-// Schema Prisma
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "mysql"  // atau provider lain seperti postgresql, sqlite, sqlserver
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
 model Student {
-  id          String   @id @default(cuid()) @map("id") @db.VarChar(255)
+  id          String              @id @default(cuid()) @map("id") @db.VarChar(255)
   name        String
-  email       String   @unique
+  email       String              @unique
   class       String
   avatar      String?
-  nfcCardId   String? @unique
+  nfcCardId   String?             @unique
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  attendance  AttendanceRecord[]
   grades      Grade[]
   enrollments StudentEnrollment[]
-  attendance  AttendanceRecord[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+
   @@map("students")
 }
 
 model Course {
- id           String           @id @default(cuid()) @map("id") @db.VarChar(255)
-  name         String
- teacher      String
- schedule     String?
-  grades       Grade[]
+  id          String              @id @default(cuid()) @map("id") @db.VarChar(255)
+  name        String
+  teacher     String
+  schedule    String?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  attendance  AttendanceSession[]
+  grades      Grade[]
+  schedules   Schedule[]
   enrollments StudentEnrollment[]
-  schedules    Schedule[]       // Remove the old day-specific relations
-  attendance   AttendanceSession[]
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
-  
+
   @@map("courses")
 }
 
@@ -47,123 +46,171 @@ model Announcement {
   date      DateTime @db.Date
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   @@map("announcements")
 }
 
 model AcademicYear {
-  id          String    @id @default(cuid()) @map("id") @db.VarChar(255)
-  year        String    // e.g., "2023/2024"
+  id          String     @id @default(cuid()) @map("id") @db.VarChar(255)
+  year        String
   description String?
-  isActive    Boolean   @default(false)
+  isActive    Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  schedules   Schedule[]
   semesters   Semester[]
-  schedules   Schedule[] // Add the reverse relation
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  
+
   @@map("academic_years")
 }
 
 model Semester {
-  id            String    @id @default(cuid()) @map("id") @db.VarChar(255)
-  name          String    // e.g., "Ganjil", "Genap"
-  startDate     DateTime
-  endDate       DateTime
+  id             String       @id @default(cuid()) @map("id") @db.VarChar(255)
+  name           String
+  startDate      DateTime
+  endDate        DateTime
   academicYearId String
-  academicYear  AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
-  schedules     Schedule[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  schedules      Schedule[]
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+
+  @@index([academicYearId], map: "semesters_academicYearId_fkey")
   @@map("semesters")
 }
 
 model Schedule {
-  id               String   @id @default(cuid()) @map("id") @db.VarChar(255)
-  time             String   // e.g., "07:00-08:00"
-  dayOfWeek        DayOfWeek
-  courseId         String
- course           Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  teacherName      String
-  class            String   // class identifier for this specific schedule
-  academicYearId   String
- academicYear     AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
-  semesterId       String
-  semester         Semester @relation(fields: [semesterId], references: [id], onDelete: Cascade)
-  classroomId      String?
-  classroom        Classroom? @relation(fields: [classroomId], references: [id], onDelete: SetNull)
-  isActive         Boolean @default(true)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  
-  @@map("schedules")
-  @@unique([time, dayOfWeek, class, academicYearId, semesterId]) // Ensures no time conflicts for same class in same semester
-}
+  id             String       @id @default(cuid()) @map("id") @db.VarChar(255)
+  time           String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  academicYearId String
+  class          String
+  courseId       String
+  dayOfWeek      DayOfWeek
+  isActive       Boolean      @default(true)
+  semesterId     String
+  teacherName    String
+  classroomId    String?
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  classroom      Classroom?   @relation(fields: [classroomId], references: [id])
+  course         Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  semester       Semester     @relation(fields: [semesterId], references: [id], onDelete: Cascade)
 
-enum DayOfWeek {
-  MONDAY
- TUESDAY
- WEDNESDAY
-  THURSDAY
-  FRIDAY
-  SATURDAY
+  @@unique([time, dayOfWeek, class, academicYearId, semesterId])
+  @@index([academicYearId], map: "schedules_academicYearId_fkey")
+  @@index([classroomId], map: "schedules_classroomId_fkey")
+  @@index([courseId], map: "schedules_courseId_fkey")
+  @@index([semesterId], map: "schedules_semesterId_fkey")
+  @@map("schedules")
 }
 
 model Grade {
   id         String   @id @default(cuid()) @map("id") @db.VarChar(255)
   assignment String
- grade      Decimal  @db.Decimal(5, 2)
+  grade      Decimal  @db.Decimal(5, 2)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-  
-  // Relasi
   studentId  String
-  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
   courseId   String
   course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  
+  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([courseId], map: "grades_courseId_fkey")
+  @@index([studentId], map: "grades_studentId_fkey")
   @@map("grades")
 }
 
 model AttendanceSession {
-  id         String           @id @default(cuid()) @map("id") @db.VarChar(255)
-  courseId   String
-  course     Course           @relation(fields: [courseId], references: [id])
+  id          String             @id @default(cuid()) @map("id") @db.VarChar(255)
+  courseId    String
   teacherName String
- class      String
- isActive   Boolean          @default(true)
-  startTime  DateTime         @default(now())
-  endTime    DateTime?
-  records    AttendanceRecord[]
-  createdAt  DateTime         @default(now())
-  updatedAt  DateTime         @updatedAt
-  
+  class       String
+  isActive    Boolean            @default(true)
+  startTime   DateTime           @default(now())
+  endTime     DateTime?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  records     AttendanceRecord[]
+  course      Course             @relation(fields: [courseId], references: [id])
+
+  @@index([courseId], map: "attendance_sessions_courseId_fkey")
   @@map("attendance_sessions")
 }
 
 model AttendanceRecord {
-  id         String           @id @default(cuid()) @map("id") @db.VarChar(255)
-  sessionId  String
-  session    AttendanceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  studentId  String
-  student    Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
- status     AttendanceStatus @default(ABSENT)
-  createdAt  DateTime         @default(now())
-  
+  id        String            @id @default(cuid()) @map("id") @db.VarChar(255)
+  sessionId String
+  studentId String
+  status    AttendanceStatus  @default(ABSENT)
+  createdAt DateTime          @default(now())
+  session   AttendanceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student   Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
   @@unique([sessionId, studentId])
+  @@index([studentId], map: "attendance_records_studentId_fkey")
   @@map("attendance_records")
 }
 
 model StudentEnrollment {
-  id         String           @id @default(cuid()) @map("id") @db.VarChar(255)
+  id         String   @id @default(cuid()) @map("id") @db.VarChar(255)
   studentId  String
- student    Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
   courseId   String
-  course     Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  enrolledAt DateTime         @default(now())
-  
+  enrolledAt DateTime @default(now())
+  course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
   @@unique([studentId, courseId])
+  @@index([courseId], map: "student_enrollments_courseId_fkey")
   @@map("student_enrollments")
+}
+
+model User {
+  id        String   @id @default(cuid()) @map("id") @db.VarChar(255)
+  name      String
+  email     String   @unique
+  password  String   @db.Text
+  role      Role
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Location {
+  id          String      @id @default(cuid()) @map("id") @db.VarChar(255)
+  name        String
+  description String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  classrooms  Classroom[]
+
+  @@map("locations")
+}
+
+model Classroom {
+  id          String     @id @default(cuid()) @map("id") @db.VarChar(255)
+  name        String
+  code        String     @unique
+  locationId  String
+  capacity    Int        @default(30)
+  description String?
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  location    Location   @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  schedules   Schedule[]
+
+  @@unique([locationId, code])
+  @@map("classrooms")
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
 }
 
 enum AttendanceStatus {
@@ -171,48 +218,8 @@ enum AttendanceStatus {
   ABSENT
 }
 
-model User {
-  id        String   @id @default(cuid()) @map("id") @db.VarChar(255)
-  name      String
-  email     String   @unique
-  password  String   @db.Text  // In production, store hashed passwords
-  role      Role
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  @@map("users")
-}
-
 enum Role {
   ADMIN
   TEACHER
   STUDENT
-}
-
-model Location {
-  id          String       @id @default(cuid()) @map("id") @db.VarChar(255)
-  name        String       // e.g., "Gedung Utama", "Gedung Barat"
-  description String?
-  classrooms  Classroom[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  
-  @@map("locations")
-}
-
-model Classroom {
-  id          String     @id @default(cuid()) @map("id") @db.VarChar(255)
-  name        String     // e.g., "Kelas 101", "Laboratorium Komputer"
-  code        String     @unique // Unique code for the classroom
-  locationId  String
-  location    Location   @relation(fields: [locationId], references: [id], onDelete: Cascade)
-  capacity    Int        @default(30)
-  description String?
-  isActive    Boolean    @default(true)
-  schedules   Schedule[] // Link to schedules that use this classroom
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  
-  @@map("classrooms")
-  @@unique([locationId, code])
 }

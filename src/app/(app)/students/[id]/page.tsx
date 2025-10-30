@@ -26,7 +26,9 @@ export default async function StudentProfilePage({
 }: {
   params: { id: string };
 }) {
-  const student = await getStudentById(params.id);
+  // In Next.js 16, params is a Promise that needs to be awaited
+  const resolvedParams = await params;
+  const student = await getStudentById(resolvedParams.id);
 
   if (!student) {
     notFound();
